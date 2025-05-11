@@ -11,6 +11,15 @@ private String role;
 private LocalDateTime createdAt;
 private LocalDateTime updatedAt;
 
+    public User(String fullName, String email, String phone, String role, LocalDateTime createdAt, LocalDateTime updatedAt) {
+        this.fullName = fullName;
+        this.email = email;
+        this.phone = phone;
+        this.role = role;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+    }
+
     public String getFullName() {
         return fullName;
     }
