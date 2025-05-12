@@ -19,7 +19,7 @@ private String phone;
 private String role;
 private LocalDateTime createdAt;
 private LocalDateTime updatedAt;
-
+private String password;
 
 
 public User (){
@@ -32,6 +32,14 @@ public User (){
         this.role = role;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public Long getId() {
