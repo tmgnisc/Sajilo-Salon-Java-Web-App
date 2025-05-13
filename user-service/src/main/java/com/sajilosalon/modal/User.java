@@ -6,6 +6,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 @Entity
@@ -26,7 +28,11 @@ private String phone;
 
 @NotBlank(message = "Role is mandatory")
 private String role;
+
+
+@CreationTimestamp
 private LocalDateTime createdAt;
+@UpdateTimestamp
 private LocalDateTime updatedAt;
 
 @NotBlank(message = "password is mandatory")
