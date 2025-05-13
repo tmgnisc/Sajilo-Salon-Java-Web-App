@@ -1,6 +1,7 @@
 package com.sajilosalon.controller;
 
 
+import com.sajilosalon.exception.UserException;
 import com.sajilosalon.modal.User;
 import com.sajilosalon.repository.UserRepository;
 import jakarta.validation.Valid;
@@ -34,7 +35,7 @@ public class UserController {
         if (otp.isPresent()) {
             return otp.get();
         }
-        throw new Exception("user not found");
+        throw new UserException("user not found");
     }
 
     @PutMapping("/api/users/{id}")
@@ -42,7 +43,7 @@ public class UserController {
 
         Optional<User> otp = userRepository.findById(id);
         if (otp.isEmpty()) {
-            throw new Exception("user not found with id" + id);
+            throw new UserException("user not found with id" + id);
         }
         User existingUser = otp.get();
         existingUser.setFullName(user.getFullName());
@@ -58,7 +59,7 @@ public class UserController {
     public String deleteUserById(@PathVariable Long id) throws Exception {
         Optional<User> otp = userRepository.findById(id);
         if (otp.isEmpty()) {
-            throw new Exception("user not found with id" + id);
+            throw new UserException("user not found with id" + id);
         }
 
         userRepository.deleteById(otp.get().getId());
