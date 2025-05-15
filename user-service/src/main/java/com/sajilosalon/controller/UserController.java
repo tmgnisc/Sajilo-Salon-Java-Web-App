@@ -35,19 +35,22 @@ public class UserController {
 
 
     @GetMapping("/api/users/{userId}")
-    public User getUserById(@PathVariable("userId") Long id) throws Exception {
-
+    public ResponseEntity<User> getUserById(@PathVariable("userId") Long id) throws Exception {
+User user = userService.getUserById(id);
+return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
     @PutMapping("/api/users/{id}")
-    public User updateUser(@RequestBody User user, @PathVariable Long id) throws Exception {
-
+    public ResponseEntity<User> updateUser(@RequestBody User user, @PathVariable Long id) throws Exception {
+        User updateUser = userService.updateUser(id, user);
+        return new ResponseEntity<>(updateUser, HttpStatus.OK);
 
     }
 
 
     @DeleteMapping("/api/users/{id}")
-    public String deleteUserById(@PathVariable Long id) throws Exception {
-
+    public ResponseEntity<String> deleteUserById(@PathVariable Long id) throws Exception {
+userService.deleteUser(id);
+return new ResponseEntity<>("User deleted", HttpStatus.ACCEPTED);
     }
 }
