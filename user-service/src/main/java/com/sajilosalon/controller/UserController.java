@@ -63,6 +63,6 @@ public class UserController {
         }
 
         userRepository.deleteById(otp.get().getId());
-        return "User deleted";
+        return "User deleted"; 
     }
 }
