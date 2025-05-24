@@ -10,6 +10,8 @@ import java.util.List;
 
 @Service
 public class SalonServiceImpl implements SalonService {
+
+
     @Override
     public Salon create(SalonDTO salon, UserDTO user) {
         return null;
