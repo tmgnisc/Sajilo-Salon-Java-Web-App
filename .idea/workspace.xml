@@ -5,9 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="17409f1a-9cc8-493d-a86d-5604b1c2c64f" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/material_theme_project_new.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/material_theme_project_new.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/salon-service/src/main/java/com/sajilosalon/service/impl/SalonServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/salon-service/src/main/java/com/sajilosalon/service/impl/SalonServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/salon-service/src/main/java/com/sajilosalon/repository/SalonRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/salon-service/src/main/java/com/sajilosalon/repository/SalonRepository.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -98,7 +96,7 @@
       <updated>1747738177069</updated>
       <workItem from="1747738178662" duration="5616000" />
       <workItem from="1747802513524" duration="40000" />
-      <workItem from="1748094895579" duration="836000" />
+      <workItem from="1748094895579" duration="1239000" />
     </task>
     <servers />
   </component>
