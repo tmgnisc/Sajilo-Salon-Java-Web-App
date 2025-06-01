@@ -1,8 +1,11 @@
 package com.sajilosalon.modal;
 
 import jakarta.persistence.*;
+import lombok.Data;
+
 
 @Entity
+@Data
 public class Category {
 
     @Id
@@ -14,6 +17,7 @@ public class Category {
 
     private String image;
 
+    @Column(nullable = false)
     private String salonId;
 
 
