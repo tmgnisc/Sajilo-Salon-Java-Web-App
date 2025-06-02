@@ -18,7 +18,7 @@ public class Category {
     private String image;
 
     @Column(nullable = false)
-    private String salonId;
+    private Long salonId;
 
 
 
