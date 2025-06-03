@@ -4,7 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="50be01ec-4f8c-41e9-9582-5a12e1532cf1" name="Changes" comment="" />
+    <list default="true" id="50be01ec-4f8c-41e9-9582-5a12e1532cf1" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/service-offering/src/main/java/com/sajilosalon/modal/ServiceOffering.java" beforeDir="false" afterPath="$PROJECT_DIR$/service-offering/src/main/java/com/sajilosalon/modal/ServiceOffering.java" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -115,7 +117,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1748920361266</updated>
-      <workItem from="1748920365892" duration="384000" />
+      <workItem from="1748920365892" duration="759000" />
     </task>
     <servers />
   </component>
