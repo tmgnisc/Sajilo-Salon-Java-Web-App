@@ -5,7 +5,7 @@ const Packages = () => {
     {
       id: 1,
       name: 'DEAL 1',
-      price: '$200',
+      price: 'NPR2000',
       services: [
         'Dermacos Facial',
         'Face Bleach',
@@ -19,7 +19,7 @@ const Packages = () => {
     {
       id: 2,
       name: 'DEAL 2',
-      price: '$400',
+      price: 'NPR4000',
       services: [
         'Dermacos Facial',
         'Face Bleach',
@@ -33,7 +33,7 @@ const Packages = () => {
     {
       id: 3,
       name: 'DEAL 3',
-      price: '$500',
+      price: 'NPR5000',
       services: [
         'Dermacos Facial',
         'Face Bleach',

@@ -7,6 +7,7 @@ import Header from './components/Header';
 import Booking from './components/Booking';
 import About from './components/About';
 import InstagramFeed from './components/InstagramFeed';
+import Footer from './components/Footer';
 
 
 const App = () => {
@@ -20,6 +21,7 @@ const App = () => {
       <Booking />
       <InstagramFeed />
       <About />
+      <Footer />
       
     </div>
   );

@@ -43,11 +43,11 @@ const Booking = () => {
               </div>
               <div className="flex items-center space-x-4">
                 <Mail className="text-orange-500 w-6 h-6" />
-                <span className="text-lg">email@example.com</span>
+                <span className="text-lg">sajilosewa@gmail.com </span>
               </div>
               <div className="flex items-center space-x-4">
                 <MapPin className="text-orange-500 w-6 h-6" />
-                <span className="text-lg">123 Main Street, Anytown, USA.</span>
+                <span className="text-lg">Kathmandu, Nepal </span>
               </div>
             </div>
 
@@ -113,7 +113,7 @@ const Booking = () => {
                     name="date"
                     placeholder="Date"
                     value={formData.date}
-                    onChange={handleInputChange}
+                    onChange={handleInputChange}SAJILO
                     className="w-full bg-transparent border-b-2 border-gray-600 text-white placeholder-gray-400 py-3 focus:border-orange-500 focus:outline-none transition-colors"
                     required
                   />
