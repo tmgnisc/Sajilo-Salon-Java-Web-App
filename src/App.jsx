@@ -1,45 +1,27 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Hero from './components/Hero';
+import Package from './components/Package';
+import Service from './components/Service';
+import Trim from './components/Trim';
+import Header from './components/Header';
+import Booking from './components/Booking';
+import About from './components/About';
+import InstagramFeed from './components/InstagramFeed';
 
-// Sections
-import Header from './sections/Header';
-import Hero from './sections/Hero';
-import Gallery from './sections/Gallery';
-import WhyChoose from './sections/WhyChoose';
-import Pricing from './sections/Pricing';
-import Testimonial from './sections/Testimonial';
-import Services from './sections/Services';
-import Contact from './sections/Contact';
-import AboutPage from './sections/AboutPage';
-import Login from './sections/Login';
-import Signup from './sections/SignUp';
-import Footer from './components/Footer';
-
-// Home Page combining multiple sections
-const Home = () => (
-  <>
-    <Hero />
-    <Gallery />
-    <WhyChoose />
-    <Pricing />
-    <Testimonial />
-    <Services />
-    <Footer />
-  </>
-);
 
 const App = () => {
   return (
-    <Router>
+    <div className="bg-gray-900 text-white min-h-screen">
       <Header />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-      </Routes>
-    </Router>
+      <Hero />
+      <Service />
+      <Package />
+      <Trim />
+      <Booking />
+      <InstagramFeed />
+      <About />
+      
+    </div>
   );
 };
 
