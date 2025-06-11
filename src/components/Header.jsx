@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Scissors, Menu, X } from 'lucide-react';
-import { href } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -9,8 +9,7 @@ const Header = () => {
     { name: 'Home', href: '#home' },
     { name: 'About', href: '#about' },
     { name: 'Services', href: '#services' },
-    { name: 'Contact', href: '#contact' },
-    {name: 'Login', href: '#Login'}
+    { name: 'Contact', href: '#contact' }
   ];
 
   return (
@@ -35,14 +34,22 @@ const Header = () => {
                 key={item.name}
                 href={item.href}
                 className={`text-lg font-medium transition-colors duration-200 ${
-                  index === 0 
-                    ? 'text-orange-500' 
+                  index === 0
+                    ? 'text-orange-500'
                     : 'text-gray-300 hover:text-orange-500'
                 }`}
               >
                 {item.name}
               </a>
             ))}
+
+            {/* Login Link */}
+            <Link
+              to="/login"
+              className="text-lg font-medium text-gray-300 hover:text-orange-500 transition-colors duration-200"
+            >
+              Login
+            </Link>
           </nav>
 
           {/* Book Appointment Button - Desktop */}
@@ -68,8 +75,8 @@ const Header = () => {
                   key={item.name}
                   href={item.href}
                   className={`text-lg font-medium transition-colors duration-200 ${
-                    index === 0 
-                      ? 'text-orange-500' 
+                    index === 0
+                      ? 'text-orange-500'
                       : 'text-gray-300 hover:text-orange-500'
                   }`}
                   onClick={() => setMobileMenuOpen(false)}
@@ -77,6 +84,15 @@ const Header = () => {
                   {item.name}
                 </a>
               ))}
+              {/* Mobile Login Link */}
+              <Link
+                to="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-lg font-medium text-gray-300 hover:text-orange-500 transition-colors duration-200"
+              >
+                Login
+              </Link>
+
               <button className="bg-transparent border-2 border-orange-500 text-orange-500 px-6 py-2 rounded hover:bg-orange-500 hover:text-white transition-all duration-300 font-medium mt-4">
                 Book Appointment
               </button>

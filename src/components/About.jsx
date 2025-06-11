@@ -9,7 +9,7 @@ const About = () => {
           <div className="text-white">
             <h2 className="text-5xl font-bold mb-8">ABOUT US</h2>
             <p className="text-gray-300 text-lg leading-relaxed mb-12">
-              At Trim & Style, we are dedicated to providing exceptional grooming and styling services tailored to your unique preferences. Step into our modern and inviting space, where our skilled barbers combine their expertise with the latest techniques to deliver top-notch results.
+              At Sajilo Sewa, we are dedicated to providing exceptional grooming and styling services tailored to your unique preferences. Step into our modern and inviting space, where our skilled barbers combine their expertise with the latest techniques to deliver top-notch results.
             </p>
 
             {/* History Section */}
@@ -21,7 +21,7 @@ const About = () => {
                 </div>
                 <div className="flex-1">
                   <p className="text-gray-300 text-lg leading-relaxed">
-                    Established in 1995, Trim & Style has been a trusted destination for exceptional grooming and styling services for over two decades. With a rich history rooted in the art of barbering, we have cultivated a reputation for delivering top-quality results and customer satisfaction.
+                    Established in 1995, Sajilo Sewa has been a trusted destination for exceptional grooming and styling services for over two decades. With a rich history rooted in the art of barbering, we have cultivated a reputation for delivering top-quality results and customer satisfaction.
                   </p>
                 </div>
               </div>
