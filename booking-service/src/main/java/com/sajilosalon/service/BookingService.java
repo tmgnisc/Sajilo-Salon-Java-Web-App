@@ -7,6 +7,7 @@ import com.sajilosalon.dto.ServiceDTO;
 import com.sajilosalon.dto.UserDTO;
 import com.sajilosalon.modal.Booking;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 
@@ -19,7 +20,7 @@ public interface BookingService {
     List<Booking> getBookingsBySalon(Long salonId);
     Booking getBookingById(Long id);
     Booking updateBooking(Long bookingId, BookingStatus status);
-    
+    List<Booking> getBookingsByDate(LocalDate date, Long salonId);
 
 
 }
