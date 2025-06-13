@@ -7,13 +7,20 @@ import com.sajilosalon.dto.ServiceDTO;
 import com.sajilosalon.dto.UserDTO;
 import com.sajilosalon.modal.Booking;
 import com.sajilosalon.modal.SalonReport;
+import com.sajilosalon.repository.BookingRepository;
 import com.sajilosalon.service.BookingService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 
+@Service
+@RequiredArgsConstructor
 public class BookingServiceImpl implements BookingService {
+
+    private final BookingRepository bookingRepository;
     @Override
     public Booking createBooking(BookingRequest booking, UserDTO user, SalonDTO salon, Set<ServiceDTO> serviceDTOSet) {
         return null;
