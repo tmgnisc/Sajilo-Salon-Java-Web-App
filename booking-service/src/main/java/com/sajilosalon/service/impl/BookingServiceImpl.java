@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -21,8 +22,23 @@ import java.util.Set;
 public class BookingServiceImpl implements BookingService {
 
     private final BookingRepository bookingRepository;
+
     @Override
     public Booking createBooking(BookingRequest booking, UserDTO user, SalonDTO salon, Set<ServiceDTO> serviceDTOSet) {
+        int totalDuration = serviceDTOSet.stream().mapToInt(ServiceDTO::getDuration).sum();
+        LocalDateTime bookingStartTime = booking.getStartTime();
+        LocalDateTime bookingEndTime = bookingStartTime.plusMinutes(totalDuration);
+
+        return null;
+    }
+
+    public Boolean isTimeSlotAvailable(SalonDTO salonDTO, LocalDateTime bookingStartTime, LocalDateTime bookingEndTime) throws Exception {
+        LocalDateTime salonOpenTime = salonDTO.getOpenTime().atDate(bookingStartTime.toLocalDate());
+        LocalDateTime salonCloseTime = salonDTO.getCloseTime().atDate(bookingStartTime.toLocalDate());
+        if(bookingStartTime.isBefore(salonOpenTime) || bookingEndTime.isAfter(salonCloseTime)){
+            throw new Exception("Booking time must be within salon opening hour");
+        }
+
         return null;
     }
 
@@ -55,4 +71,6 @@ public class BookingServiceImpl implements BookingService {
     public SalonReport getSalonReport(Long salonId) {
         return null;
     }
+
+
 }
