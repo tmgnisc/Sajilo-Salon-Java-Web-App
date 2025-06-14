@@ -69,27 +69,43 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public List<Booking> getBookingsByCustomer(Long customerId) {
-        return List.of();
+        return bookingRepository.findByCustomerId(customerId);
     }
 
     @Override
     public List<Booking> getBookingsBySalon(Long salonId) {
-        return List.of();
+        return bookingRepository.findBySalonId(salonId);
     }
 
     @Override
-    public Booking getBookingById(Long id) {
-        return null;
+    public Booking getBookingById(Long id) throws Exception {
+        Booking booking = bookingRepository.findById(id).orElse(null);
+        if(booking == null) {
+            throw new Exception("booking not found");
+        }
+        return booking;
     }
 
     @Override
-    public Booking updateBooking(Long bookingId, BookingStatus status) {
-        return null;
+    public Booking updateBooking(Long bookingId, BookingStatus status) throws Exception {
+        Booking booking = getBookingById(bookingId);
+        booking.setStatus(status);
+        return bookingRepository.save(booking);
     }
 
     @Override
     public List<Booking> getBookingsByDate(LocalDate date, Long salonId) {
+        List<Booking> allBookings= getBookingsBySalon(salonId);
+        if(date==null){
+            return allBookings;
+        }
+        allBookings.stream()
+                .filter(booking -> isSameDate(booking.getStartTime(), date) || isSameDate(booking.getEndTime(), date))
+                .collect(Collectors.toList());
         return List.of();
+    }
+
+    private boolean isSameDate(LocalDateTime startTime, LocalDate date) {
     }
 
     @Override
