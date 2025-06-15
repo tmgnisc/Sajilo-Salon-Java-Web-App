@@ -6,8 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="78d37738-fad6-44d9-9d82-e99bc80df1a1" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/booking-service/src/main/java/com/sajilosalon/modal/SalonReport.java" beforeDir="false" afterPath="$PROJECT_DIR$/booking-service/src/main/java/com/sajilosalon/modal/SalonReport.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/booking-service/src/main/java/com/sajilosalon/service/impl/BookingServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/booking-service/src/main/java/com/sajilosalon/service/impl/BookingServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/booking-service/src/main/java/com/sajilosalon/controller/BookingController.java" beforeDir="false" afterPath="$PROJECT_DIR$/booking-service/src/main/java/com/sajilosalon/controller/BookingController.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -139,7 +138,7 @@
       <workItem from="1749821329619" duration="2773000" />
       <workItem from="1749867642541" duration="2617000" />
       <workItem from="1749982335520" duration="5000" />
-      <workItem from="1749985942629" duration="657000" />
+      <workItem from="1749985942629" duration="1336000" />
     </task>
     <servers />
   </component>
