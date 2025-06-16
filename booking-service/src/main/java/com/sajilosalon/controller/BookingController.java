@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -30,16 +31,20 @@ public class BookingController {
         user.setId(1L);
         SalonDTO salon = new SalonDTO();
         salon.setId(salonId);
+        // Static time: 10:00 AM (10:00 in 24-hour format) on June 16, 2025
+        salon.setOpenTime(LocalTime.of(10, 0)); // 10:00 AM
+        salon.setCloseTime(LocalTime.of(10, 0).plusHours(12)); // 10:00 PM
+
+
         Set<ServiceDTO> serviceDTOSet = new HashSet<>();
         ServiceDTO serviceDTO = new ServiceDTO();
-        //static dto for now
         serviceDTO.setId(1L);
         serviceDTO.setPrice(399);
         serviceDTO.setDuration(45);
         serviceDTO.setName("Hair cut for men");
         serviceDTOSet.add(serviceDTO);
 
-        Booking booking = bookingService.createBooking(bookingRequest, user, salon, serviceDTOSet)
+        Booking booking = bookingService.createBooking(bookingRequest, user, salon, serviceDTOSet);
 
         return ResponseEntity.ok(booking);
     }
