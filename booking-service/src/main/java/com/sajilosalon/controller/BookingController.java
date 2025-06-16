@@ -5,6 +5,7 @@ import com.sajilosalon.domain.BookingStatus;
 import com.sajilosalon.dto.*;
 import com.sajilosalon.mapper.BookingMapper;
 import com.sajilosalon.modal.Booking;
+import com.sajilosalon.modal.SalonReport;
 import com.sajilosalon.service.BookingService;
 import lombok.RequiredArgsConstructor;
 import org.apache.coyote.Response;
@@ -101,13 +102,29 @@ public class BookingController {
 
 
     @GetMapping("/slots/salon/{salonId}/date/{date}")
-    public ResponseEntity<BookingDTO> getBookedSlot(@PathVariable Long salonId, @RequestParam LocalDate date) throws Exception {
+    public ResponseEntity<List<BookingSlotDTO>> getBookedSlot(@PathVariable Long salonId, @RequestParam(required = false) LocalDate date) throws Exception {
 
 
         List<Booking> bookings = bookingService.getBookingsByDate(date, salonId);
 
+        List<BookingSlotDTO> slotsDTO = bookings.stream().map(booking -> {
+            BookingSlotDTO slotDTO = new BookingSlotDTO();
+            slotDTO.setStartTime(booking.getStartTime());
+            slotDTO.setEndTime(booking.getEndTime());
+            return slotDTO;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(slotsDTO);
 
-        return ResponseEntity.ok(getBookingDTOs(bookings));
+    }
+
+    @GetMapping("/report")
+    public ResponseEntity<SalonReport> getSalonReport() throws Exception {
+
+
+        SalonReport report = bookingService.getSalonReport(1L);
+
+
+        return ResponseEntity.ok(report);
 
     }
 
