@@ -118,7 +118,7 @@ public class BookingServiceImpl implements BookingService {
         List<Booking> cancelledBookings = bookings.stream().filter(booking-> booking.getStatus().equals(BookingStatus.CANCELLED)).collect(Collectors.toList());
         Double totalRefund = cancelledBookings.stream().mapToDouble(Booking::getTotalPrice).sum();
         SalonReport report = new SalonReport();
-        report.getSalonId(salonId);
+        report.setSalonId(salonId);
         report.setCancelledBookings(cancelledBookings.size());
         report.setTotalBookings(totalBooking);
         report.setTotalEarnings(totalEarnings);
