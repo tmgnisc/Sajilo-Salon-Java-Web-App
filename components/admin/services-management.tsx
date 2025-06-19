@@ -1,9 +1,8 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
-import { Plus, Search, Edit, Trash2 } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Plus, Search, Edit, Trash2, Loader2, Scissors } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,120 +11,203 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { categoriesData } from "@/lib/data"
+import { useApi } from "@/hooks/use-api"
 
-const servicesData = [
-  {
-    id: 1,
-    title: "Hair Cut & Style",
-    description: "Professional haircut with styling",
-    price: 800,
-    duration: 60,
-    categoryId: "hair",
-    image: "/placeholder.svg?height=100&width=100",
-    active: true,
-  },
-  {
-    id: 2,
-    title: "Facial Treatment",
-    description: "Deep cleansing facial treatment",
-    price: 1200,
-    duration: 90,
-    categoryId: "facial",
-    image: "/placeholder.svg?height=100&width=100",
-    active: true,
-  },
-  {
-    id: 3,
-    title: "Massage Therapy",
-    description: "Relaxing full body massage",
-    price: 2000,
-    duration: 120,
-    categoryId: "massage",
-    image: "/placeholder.svg?height=100&width=100",
-    active: false,
-  },
-]
+interface Service {
+  id: string
+  name: string
+  description: string | null
+  price: number
+  duration: number
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
 
 export function ServicesManagement() {
   const { toast } = useToast()
-  const [services, setServices] = useState(servicesData)
+  const { apiCall, loading, error } = useApi()
+  const [services, setServices] = useState<Service[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [editingService, setEditingService] = useState<any>(null)
+  const [editingService, setEditingService] = useState<Service | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
-    title: "",
+    name: "",
     description: "",
     price: "",
     duration: "",
-    categoryId: "",
-    image: "",
   })
+
+  useEffect(() => {
+    fetchServices()
+  }, [])
+
+  const fetchServices = async () => {
+    const response = await apiCall<Service[]>('/admin/services')
+    if (response.success && response.data) {
+      setServices(response.data)
+    } else {
+      toast({
+        title: "Error",
+        description: response.error || "Failed to load services",
+        variant: "destructive"
+      })
+    }
+  }
 
   const filteredServices = services.filter(
     (service) =>
-      service.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      service.description.toLowerCase().includes(searchTerm.toLowerCase()),
+      service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (service.description && service.description.toLowerCase().includes(searchTerm.toLowerCase())),
   )
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (editingService) {
-      setServices(
-        services.map((service) =>
-          service.id === editingService.id
-            ? { ...service, ...formData, price: Number(formData.price), duration: Number(formData.duration) }
-            : service,
-        ),
-      )
-      toast({ title: "Service Updated", description: "Service has been updated successfully" })
-    } else {
-      const newService = {
-        id: Date.now(),
-        ...formData,
-        price: Number(formData.price),
-        duration: Number(formData.duration),
-        active: true,
+    setIsSubmitting(true)
+
+    try {
+      if (editingService) {
+        // Update service
+        const response = await apiCall<Service>('/admin/services', {
+          method: 'PUT',
+          body: JSON.stringify({
+            id: editingService.id,
+            name: formData.name,
+            description: formData.description,
+            price: formData.price,
+            duration: formData.duration,
+            isActive: editingService.isActive
+          })
+        })
+
+        if (response.success && response.data) {
+          setServices(services.map(service => 
+            service.id === editingService.id ? response.data! : service
+          ))
+          toast({ title: "Service Updated", description: "Service has been updated successfully" })
+          resetForm()
+        } else {
+          toast({
+            title: "Update Failed",
+            description: response.error || "Failed to update service",
+            variant: "destructive"
+          })
+        }
+      } else {
+        // Create service
+        const response = await apiCall<Service>('/admin/services', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: formData.name,
+            description: formData.description,
+            price: formData.price,
+            duration: formData.duration
+          })
+        })
+
+        if (response.success && response.data) {
+          setServices([response.data, ...services])
+          toast({ title: "Service Added", description: "New service has been added successfully" })
+          resetForm()
+        } else {
+          toast({
+            title: "Creation Failed",
+            description: response.error || "Failed to create service",
+            variant: "destructive"
+          })
+        }
       }
-      setServices([...services, newService])
-      toast({ title: "Service Added", description: "New service has been added successfully" })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      })
+    } finally {
+      setIsSubmitting(false)
     }
-    resetForm()
   }
 
   const resetForm = () => {
-    setFormData({ title: "", description: "", price: "", duration: "", categoryId: "", image: "" })
+    setFormData({ name: "", description: "", price: "", duration: "" })
     setEditingService(null)
     setIsAddDialogOpen(false)
   }
 
-  const handleEdit = (service: any) => {
+  const handleEdit = (service: Service) => {
     setEditingService(service)
     setFormData({
-      title: service.title,
-      description: service.description,
+      name: service.name,
+      description: service.description || "",
       price: service.price.toString(),
       duration: service.duration.toString(),
-      categoryId: service.categoryId,
-      image: service.image,
     })
     setIsAddDialogOpen(true)
   }
 
-  const handleDelete = (serviceId: number) => {
-    setServices(services.filter((service) => service.id !== serviceId))
-    toast({ title: "Service Deleted", description: "Service has been deleted successfully" })
+  const handleDelete = async (serviceId: string) => {
+    const response = await apiCall(`/admin/services?id=${serviceId}`, {
+      method: 'DELETE'
+    })
+
+    if (response.success) {
+      setServices(services.filter((service) => service.id !== serviceId))
+      toast({ title: "Service Deleted", description: "Service has been deleted successfully" })
+    } else {
+      toast({
+        title: "Deletion Failed",
+        description: response.error || "Failed to delete service",
+        variant: "destructive"
+      })
+    }
   }
 
-  const toggleServiceStatus = (serviceId: number) => {
-    setServices(
-      services.map((service) => (service.id === serviceId ? { ...service, active: !service.active } : service)),
+  const toggleServiceStatus = async (service: Service) => {
+    const response = await apiCall<Service>('/admin/services', {
+      method: 'PUT',
+      body: JSON.stringify({
+        id: service.id,
+        name: service.name,
+        description: service.description,
+        price: service.price,
+        duration: service.duration,
+        isActive: !service.isActive
+      })
+    })
+
+    if (response.success && response.data) {
+      setServices(services.map(s => s.id === service.id ? response.data! : s))
+      toast({ title: "Status Updated", description: "Service status has been updated" })
+    } else {
+      toast({
+        title: "Update Failed",
+        description: response.error || "Failed to update service status",
+        variant: "destructive"
+      })
+    }
+  }
+
+  if (loading && services.length === 0) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center space-x-2">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>Loading services...</span>
+        </div>
+      </div>
     )
-    toast({ title: "Status Updated", description: "Service status has been updated" })
   }
 
-  const getCategoryName = (categoryId: string) => {
-    return categoriesData.find((cat) => cat.id === categoryId)?.name || "Unknown"
+  if (error && services.length === 0) {
+    return (
+      <div className="p-6">
+        <div className="text-center py-8">
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button onClick={fetchServices}>Retry</Button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -149,10 +231,10 @@ export function ServicesManagement() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Service Title</label>
+                <label className="block text-sm font-medium mb-2">Service Name</label>
                 <Input
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
                 />
               </div>
@@ -184,30 +266,19 @@ export function ServicesManagement() {
                   />
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Category</label>
-                <Select
-                  value={formData.categoryId}
-                  onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categoriesData.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
               <div className="flex justify-end space-x-2">
                 <Button type="button" variant="outline" onClick={resetForm}>
                   Cancel
                 </Button>
-                <Button type="submit" className="bg-gradient-to-r from-purple-600 to-rose-500">
-                  {editingService ? "Update" : "Add"} Service
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      {editingService ? "Updating..." : "Creating..."}
+                    </>
+                  ) : (
+                    editingService ? "Update Service" : "Add Service"
+                  )}
                 </Button>
               </div>
             </form>
@@ -216,68 +287,83 @@ export function ServicesManagement() {
       </div>
 
       {/* Search */}
-      <Card className="border-0 bg-white/80 backdrop-blur-sm">
-        <CardContent className="p-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-            <Input
-              placeholder="Search services..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Input
+          placeholder="Search services..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
 
-      {/* Services Grid */}
+      {/* Services List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredServices.map((service) => (
-          <Card key={service.id} className="border-0 bg-white/80 backdrop-blur-sm overflow-hidden">
-            <div className="relative">
-              <img src={service.image || "/placeholder.svg"} alt={service.title} className="w-full h-32 object-cover" />
-              <Badge
-                className={`absolute top-2 right-2 ${
-                  service.active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                }`}
-              >
-                {service.active ? "Active" : "Inactive"}
-              </Badge>
-            </div>
-            <CardContent className="p-4">
-              <div className="space-y-3">
-                <div>
-                  <h3 className="font-semibold text-gray-900">{service.title}</h3>
-                  <p className="text-sm text-gray-600 line-clamp-2">{service.description}</p>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <Badge variant="outline">{getCategoryName(service.categoryId)}</Badge>
-                  <span className="text-gray-500">{service.duration} min</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-lg font-bold text-purple-600">₹{service.price}</span>
-                  <div className="flex space-x-2">
-                    <Button variant="ghost" size="sm" onClick={() => handleEdit(service)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleServiceStatus(service.id)}
-                      className={service.active ? "text-red-600" : "text-green-600"}
-                    >
-                      {service.active ? "Deactivate" : "Activate"}
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDelete(service.id)} className="text-red-600">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+          <Card key={service.id} className="border-0 bg-white/80 backdrop-blur-sm">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900 mb-1">{service.name}</h3>
+                  <p className="text-sm text-gray-600 mb-2">{service.description}</p>
+                  <div className="flex items-center space-x-4 text-sm">
+                    <span className="text-purple-600 font-medium">₹{service.price}</span>
+                    <span className="text-gray-500">{service.duration} min</span>
                   </div>
+                </div>
+                <Badge className={service.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}>
+                  {service.isActive ? "Active" : "Inactive"}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => toggleServiceStatus(service)}
+                  className={service.isActive ? "text-red-600 border-red-200" : "text-green-600 border-green-200"}
+                >
+                  {service.isActive ? "Deactivate" : "Activate"}
+                </Button>
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEdit(service)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDelete(service.id)}
+                    className="text-red-600 border-red-200 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {filteredServices.length === 0 && (
+        <div className="text-center py-12">
+          <Scissors className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+          <p className="text-gray-500 mb-4">
+            {searchTerm ? "No services found matching your search." : "No services added yet."}
+          </p>
+          {!searchTerm && (
+            <Button 
+              onClick={() => setIsAddDialogOpen(true)}
+              className="bg-gradient-to-r from-purple-600 to-rose-500 hover:from-purple-700 hover:to-rose-600"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Your First Service
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   )
 }

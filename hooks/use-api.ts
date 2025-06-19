@@ -27,9 +27,7 @@ export function useApi() {
 
     try {
       const token = getToken()
-      const headers: HeadersInit = {
-        ...options.headers,
-      }
+      const headers: Record<string, string> = {}
 
       // Only set Content-Type if it's not FormData
       if (!(options.body instanceof FormData)) {
@@ -37,7 +35,12 @@ export function useApi() {
       }
 
       if (token) {
-        headers.Authorization = `Bearer ${token}`
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
+      // Merge with existing headers from options
+      if (options.headers) {
+        Object.assign(headers, options.headers)
       }
 
       const response = await fetch(`/api${endpoint}`, {

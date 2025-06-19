@@ -1,28 +1,79 @@
 "use client"
 
-import { TrendingUp, Calendar, DollarSign, Users, RefreshCw, Scissors } from "lucide-react"
+import { useState, useEffect } from "react"
+import { TrendingUp, Calendar, DollarSign, Users, RefreshCw, Scissors, Loader2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts"
+import { useApi } from "@/hooks/use-api"
+import { useToast } from "@/hooks/use-toast"
 
-const revenueData = [
-  { month: "Jan", revenue: 45000, bookings: 120 },
-  { month: "Feb", revenue: 52000, bookings: 140 },
-  { month: "Mar", revenue: 48000, bookings: 130 },
-  { month: "Apr", revenue: 61000, bookings: 165 },
-  { month: "May", revenue: 55000, bookings: 150 },
-  { month: "Jun", revenue: 67000, bookings: 180 },
-]
-
-const recentBookings = [
-  { id: 1, customer: "Priya Sharma", service: "Hair Cut & Style", time: "10:30 AM", status: "confirmed" },
-  { id: 2, customer: "Rahul Patel", service: "Facial Treatment", time: "2:00 PM", status: "pending" },
-  { id: 3, customer: "Anita Singh", service: "Manicure", time: "4:30 PM", status: "completed" },
-  { id: 4, customer: "Vikram Kumar", service: "Hair Color", time: "11:00 AM", status: "confirmed" },
-]
+interface DashboardData {
+  salon: {
+    id: string
+    name: string
+    type: string
+    address: string
+    description: string | null
+    imageUrl: string | null
+    isVerified: boolean
+  }
+  stats: {
+    totalBookings: number
+    completedBookings: number
+    pendingBookings: number
+    totalRevenue: number
+    totalServices: number
+  }
+  recentBookings: {
+    id: string
+    customer: string
+    service: string
+    time: string
+    date: string
+    status: string
+    totalAmount: number
+  }[]
+  monthlyData: {
+    month: string
+    revenue: number
+    bookings: number
+  }[]
+}
 
 export function AdminDashboard() {
+  const { apiCall, loading, error } = useApi()
+  const { toast } = useToast()
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
+
+  const fetchDashboardData = async () => {
+    const response = await apiCall<DashboardData>('/admin/dashboard')
+    if (response.success && response.data) {
+      setDashboardData(response.data)
+    } else {
+      toast({
+        title: "Error",
+        description: response.error || "Failed to load dashboard data",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    await fetchDashboardData()
+    setIsRefreshing(false)
+    toast({
+      title: "Refreshed",
+      description: "Dashboard data has been updated"
+    })
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "confirmed":
@@ -38,16 +89,50 @@ export function AdminDashboard() {
     }
   }
 
+  if (loading && !dashboardData) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center space-x-2">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>Loading dashboard...</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (error && !dashboardData) {
+    return (
+      <div className="p-6">
+        <div className="text-center py-8">
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button onClick={fetchDashboardData}>Retry</Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!dashboardData) {
+    return null
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Welcome back! Here's what's happening at your salon.</p>
+          <p className="text-gray-600">Welcome back! Here's what's happening at {dashboardData.salon.name}.</p>
         </div>
-        <Button className="bg-gradient-to-r from-purple-600 to-rose-500 hover:from-purple-700 hover:to-rose-600">
-          <RefreshCw className="h-4 w-4 mr-2" />
+        <Button 
+          className="bg-gradient-to-r from-purple-600 to-rose-500 hover:from-purple-700 hover:to-rose-600"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+        >
+          {isRefreshing ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <RefreshCw className="h-4 w-4 mr-2" />
+          )}
           Refresh Data
         </Button>
       </div>
@@ -59,8 +144,8 @@ export function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-purple-100">Total Revenue</p>
-                <p className="text-2xl font-bold">₹3,28,000</p>
-                <p className="text-sm text-purple-200">+12% from last month</p>
+                <p className="text-2xl font-bold">₹{dashboardData.stats.totalRevenue.toLocaleString()}</p>
+                <p className="text-sm text-purple-200">From {dashboardData.stats.completedBookings} completed bookings</p>
               </div>
               <DollarSign className="h-8 w-8 text-purple-200" />
             </div>
@@ -72,8 +157,8 @@ export function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-rose-100">Total Bookings</p>
-                <p className="text-2xl font-bold">1,285</p>
-                <p className="text-sm text-rose-200">+8% from last month</p>
+                <p className="text-2xl font-bold">{dashboardData.stats.totalBookings}</p>
+                <p className="text-sm text-rose-200">{dashboardData.stats.pendingBookings} pending</p>
               </div>
               <Calendar className="h-8 w-8 text-rose-200" />
             </div>
@@ -84,11 +169,11 @@ export function AdminDashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-amber-100">New Customers</p>
-                <p className="text-2xl font-bold">342</p>
-                <p className="text-sm text-amber-200">+15% from last month</p>
+                <p className="text-amber-100">Active Services</p>
+                <p className="text-2xl font-bold">{dashboardData.stats.totalServices}</p>
+                <p className="text-sm text-amber-200">Available for booking</p>
               </div>
-              <Users className="h-8 w-8 text-amber-200" />
+              <Scissors className="h-8 w-8 text-amber-200" />
             </div>
           </CardContent>
         </Card>
@@ -97,9 +182,13 @@ export function AdminDashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-emerald-100">Growth Rate</p>
-                <p className="text-2xl font-bold">23.5%</p>
-                <p className="text-sm text-emerald-200">+3% from last month</p>
+                <p className="text-emerald-100">Completion Rate</p>
+                <p className="text-2xl font-bold">
+                  {dashboardData.stats.totalBookings > 0 
+                    ? Math.round((dashboardData.stats.completedBookings / dashboardData.stats.totalBookings) * 100)
+                    : 0}%
+                </p>
+                <p className="text-sm text-emerald-200">Bookings completed</p>
               </div>
               <TrendingUp className="h-8 w-8 text-emerald-200" />
             </div>
@@ -107,57 +196,48 @@ export function AdminDashboard() {
         </Card>
       </div>
 
-      {/* Charts */}
+      {/* Monthly Data Summary */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border-0 bg-white/80 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle>Revenue Trend</CardTitle>
+            <CardTitle>Revenue Summary</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={revenueData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Line
-                  type="monotone"
-                  dataKey="revenue"
-                  stroke="url(#gradient)"
-                  strokeWidth={3}
-                  dot={{ fill: "#8B5CF6", strokeWidth: 2, r: 6 }}
-                />
-                <defs>
-                  <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#8B5CF6" />
-                    <stop offset="100%" stopColor="#EC4899" />
-                  </linearGradient>
-                </defs>
-              </LineChart>
-            </ResponsiveContainer>
+            <div className="space-y-4">
+              {dashboardData.monthlyData.map((month, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">{month.month}</p>
+                    <p className="text-sm text-gray-600">{month.bookings} bookings</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-purple-600">₹{month.revenue.toLocaleString()}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
 
         <Card className="border-0 bg-white/80 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle>Monthly Bookings</CardTitle>
+            <CardTitle>Monthly Bookings Summary</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={revenueData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="bookings" fill="url(#barGradient)" radius={[4, 4, 0, 0]} />
-                <defs>
-                  <linearGradient id="barGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#8B5CF6" />
-                    <stop offset="100%" stopColor="#EC4899" />
-                  </linearGradient>
-                </defs>
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="space-y-4">
+              {dashboardData.monthlyData.map((month, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">{month.month}</p>
+                    <p className="text-sm text-gray-600">Revenue: ₹{month.revenue.toLocaleString()}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-rose-600">{month.bookings}</p>
+                    <p className="text-sm text-gray-500">bookings</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -169,18 +249,32 @@ export function AdminDashboard() {
             <CardTitle>Recent Bookings</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {recentBookings.map((booking) => (
-                <div key={booking.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="font-medium text-gray-900">{booking.customer}</p>
-                    <p className="text-sm text-gray-600">{booking.service}</p>
-                    <p className="text-xs text-gray-500">{booking.time}</p>
+            {dashboardData.recentBookings.length === 0 ? (
+              <div className="text-center py-8">
+                <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">No recent bookings</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {dashboardData.recentBookings.map((booking) => (
+                  <div key={booking.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900">{booking.customer}</p>
+                      <p className="text-sm text-gray-600">{booking.service}</p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(booking.date).toLocaleDateString()} at {booking.time}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <Badge className={getStatusColor(booking.status)}>
+                        {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                      </Badge>
+                      <p className="text-sm font-medium text-gray-900 mt-1">₹{booking.totalAmount}</p>
+                    </div>
                   </div>
-                  <Badge className={getStatusColor(booking.status)}>{booking.status}</Badge>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
