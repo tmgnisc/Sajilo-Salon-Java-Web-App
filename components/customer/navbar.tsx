@@ -7,6 +7,7 @@ import { Bell, Menu, X, User, LogOut, Settings, Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
+import { useApi } from "@/hooks/use-api"
 
 interface User {
   id: string
@@ -16,12 +17,18 @@ interface User {
   role: string
 }
 
+interface Notification {
+  id: string
+  isRead: boolean
+}
+
 export function CustomerNavbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [notificationCount] = useState(3)
+  const [notificationCount, setNotificationCount] = useState(0)
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
+  const { apiCall } = useApi()
 
   useEffect(() => {
     // Check for user data in localStorage
@@ -31,6 +38,8 @@ export function CustomerNavbar() {
     if (userData && token) {
       try {
         setUser(JSON.parse(userData))
+        // Fetch notification count if user is logged in
+        fetchNotificationCount()
       } catch (error) {
         console.error('Error parsing user data:', error)
         // Clear invalid data
@@ -42,6 +51,18 @@ export function CustomerNavbar() {
     setIsLoading(false)
   }, [])
 
+  const fetchNotificationCount = async () => {
+    try {
+      const response = await apiCall<Notification[]>('/user/notifications')
+      if (response.success && response.data) {
+        const unreadCount = response.data.filter(notif => !notif.isRead).length
+        setNotificationCount(unreadCount)
+      }
+    } catch (error) {
+      console.error('Error fetching notification count:', error)
+    }
+  }
+
   const handleLogout = () => {
     // Clear all auth data
     localStorage.removeItem('user')
@@ -50,6 +71,7 @@ export function CustomerNavbar() {
     
     // Reset user state
     setUser(null)
+    setNotificationCount(0)
     
     // Redirect to home page
     router.push('/')
@@ -184,6 +206,11 @@ export function CustomerNavbar() {
                   <Link href="/notifications" className="text-gray-700 hover:text-purple-600 transition-colors flex items-center">
                     <Bell className="h-4 w-4 mr-2" />
                     Notifications
+                    {notificationCount > 0 && (
+                      <Badge className="ml-2 h-5 w-5 flex items-center justify-center p-0 bg-rose-500 text-xs">
+                        {notificationCount}
+                      </Badge>
+                    )}
                   </Link>
                   <Link href="/profile" className="text-gray-700 hover:text-purple-600 transition-colors flex items-center">
                     <Settings className="h-4 w-4 mr-2" />

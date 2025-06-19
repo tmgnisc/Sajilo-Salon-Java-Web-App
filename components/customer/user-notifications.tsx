@@ -1,92 +1,171 @@
 "use client"
 
-import { useState } from "react"
-import { Bell, Check, X, Calendar, Star, Gift } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Bell, Check, X, Calendar, Star, Gift, Loader2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
+import { useApi } from "@/hooks/use-api"
+
+interface Notification {
+  id: string
+  type: string
+  title: string
+  message: string
+  isRead: boolean
+  createdAt: string
+}
 
 export function UserNotifications() {
   const { toast } = useToast()
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      type: "booking",
-      title: "Booking Confirmed",
-      message: "Your appointment at Glamour Studio has been confirmed for Jan 15, 2024 at 10:30 AM",
-      time: "2 hours ago",
-      read: false,
-      icon: Calendar,
-    },
-    {
-      id: 2,
-      type: "reminder",
-      title: "Appointment Reminder",
-      message: "Your appointment at Bliss Spa is tomorrow at 2:00 PM. Don't forget!",
-      time: "1 day ago",
-      read: false,
-      icon: Bell,
-    },
-    {
-      id: 3,
-      type: "review",
-      title: "Rate Your Experience",
-      message: "How was your recent visit to Style Hub? Share your feedback and help others.",
-      time: "3 days ago",
-      read: true,
-      icon: Star,
-    },
-    {
-      id: 4,
-      type: "offer",
-      title: "Special Offer",
-      message: "20% off on your next booking! Use code BEAUTY20. Valid until end of month.",
-      time: "1 week ago",
-      read: true,
-      icon: Gift,
-    },
-  ])
+  const { apiCall, loading, error } = useApi()
+  const [notifications, setNotifications] = useState<Notification[]>([])
 
-  const markAsRead = (id: number) => {
-    setNotifications(notifications.map((notif) => (notif.id === id ? { ...notif, read: true } : notif)))
-    toast({
-      title: "Marked as read",
-      description: "Notification has been marked as read",
-    })
+  // Fetch notifications on component mount
+  useEffect(() => {
+    fetchNotifications()
+  }, [])
+
+  const fetchNotifications = async () => {
+    const response = await apiCall<Notification[]>('/user/notifications')
+    if (response.success && response.data) {
+      setNotifications(response.data)
+    }
   }
 
-  const markAllAsRead = () => {
-    setNotifications(notifications.map((notif) => ({ ...notif, read: true })))
-    toast({
-      title: "All notifications marked as read",
-      description: "All your notifications have been marked as read",
+  const markAsRead = async (id: string) => {
+    const response = await apiCall('/user/notifications', {
+      method: 'PUT',
+      body: JSON.stringify({ action: 'markAsRead', notificationId: id })
     })
+    
+    if (response.success) {
+      setNotifications(notifications.map((notif) => 
+        notif.id === id ? { ...notif, isRead: true } : notif
+      ))
+      toast({
+        title: "Marked as read",
+        description: "Notification has been marked as read",
+      })
+    } else {
+      toast({
+        title: "Failed",
+        description: response.error || "Failed to mark as read",
+        variant: "destructive"
+      })
+    }
   }
 
-  const deleteNotification = (id: number) => {
-    setNotifications(notifications.filter((notif) => notif.id !== id))
-    toast({
-      title: "Notification deleted",
-      description: "The notification has been removed",
+  const markAllAsRead = async () => {
+    const response = await apiCall('/user/notifications', {
+      method: 'PUT',
+      body: JSON.stringify({ action: 'markAllAsRead' })
     })
+    
+    if (response.success) {
+      setNotifications(notifications.map((notif) => ({ ...notif, isRead: true })))
+      toast({
+        title: "All notifications marked as read",
+        description: "All your notifications have been marked as read",
+      })
+    } else {
+      toast({
+        title: "Failed",
+        description: response.error || "Failed to mark all as read",
+        variant: "destructive"
+      })
+    }
   }
 
-  const unreadCount = notifications.filter((notif) => !notif.read).length
+  const deleteNotification = async (id: string) => {
+    const response = await apiCall('/user/notifications', {
+      method: 'PUT',
+      body: JSON.stringify({ action: 'delete', notificationId: id })
+    })
+    
+    if (response.success) {
+      setNotifications(notifications.filter((notif) => notif.id !== id))
+      toast({
+        title: "Notification deleted",
+        description: "The notification has been removed",
+      })
+    } else {
+      toast({
+        title: "Failed",
+        description: response.error || "Failed to delete notification",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const unreadCount = notifications.filter((notif) => !notif.isRead).length
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case "booking":
+      case "BOOKING":
         return "bg-blue-100 text-blue-700"
-      case "reminder":
+      case "REMINDER":
         return "bg-purple-100 text-purple-700"
-      case "review":
+      case "REVIEW":
         return "bg-amber-100 text-amber-700"
-      case "offer":
+      case "OFFER":
         return "bg-green-100 text-green-700"
       default:
         return "bg-gray-100 text-gray-700"
     }
+  }
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case "BOOKING":
+        return Calendar
+      case "REMINDER":
+        return Bell
+      case "REVIEW":
+        return Star
+      case "OFFER":
+        return Gift
+      default:
+        return Bell
+    }
+  }
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
+    
+    if (diffInHours < 1) {
+      return 'Just now'
+    } else if (diffInHours < 24) {
+      return `${diffInHours} hour${diffInHours !== 1 ? 's' : ''} ago`
+    } else {
+      const diffInDays = Math.floor(diffInHours / 24)
+      return `${diffInDays} day${diffInDays !== 1 ? 's' : ''} ago`
+    }
+  }
+
+  if (loading && notifications.length === 0) {
+    return (
+      <div className="max-w-4xl mx-auto flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center space-x-2">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>Loading notifications...</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (error && notifications.length === 0) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center py-8">
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button onClick={fetchNotifications}>Retry</Button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -126,59 +205,64 @@ export function UserNotifications() {
             </div>
           ) : (
             <div className="space-y-4">
-              {notifications.map((notification) => (
-                <Card
-                  key={notification.id}
-                  className={`border transition-all duration-200 ${
-                    notification.read ? "border-gray-200 bg-white" : "border-purple-200 bg-purple-50/50"
-                  }`}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-3 flex-1">
-                        <div className={`p-2 rounded-full ${notification.read ? "bg-gray-100" : "bg-purple-100"}`}>
-                          <notification.icon
-                            className={`h-5 w-5 ${notification.read ? "text-gray-600" : "text-purple-600"}`}
-                          />
-                        </div>
-
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className={`font-semibold ${notification.read ? "text-gray-900" : "text-gray-900"}`}>
-                              {notification.title}
-                            </h3>
-                            <Badge className={getTypeColor(notification.type)}>{notification.type}</Badge>
-                            {!notification.read && <div className="w-2 h-2 bg-purple-600 rounded-full"></div>}
+              {notifications.map((notification) => {
+                const IconComponent = getTypeIcon(notification.type)
+                return (
+                  <Card
+                    key={notification.id}
+                    className={`border transition-all duration-200 ${
+                      notification.isRead ? "border-gray-200 bg-white" : "border-purple-200 bg-purple-50/50"
+                    }`}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start space-x-3 flex-1">
+                          <div className={`p-2 rounded-full ${notification.isRead ? "bg-gray-100" : "bg-purple-100"}`}>
+                            <IconComponent
+                              className={`h-5 w-5 ${notification.isRead ? "text-gray-600" : "text-purple-600"}`}
+                            />
                           </div>
-                          <p className="text-gray-600 text-sm mb-2">{notification.message}</p>
-                          <p className="text-xs text-gray-400">{notification.time}</p>
-                        </div>
-                      </div>
 
-                      <div className="flex items-center space-x-2 ml-4">
-                        {!notification.read && (
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className={`font-semibold ${notification.isRead ? "text-gray-900" : "text-gray-900"}`}>
+                                {notification.title}
+                              </h3>
+                              <Badge className={getTypeColor(notification.type)}>
+                                {notification.type.charAt(0).toUpperCase() + notification.type.slice(1).toLowerCase()}
+                              </Badge>
+                              {!notification.isRead && <div className="w-2 h-2 bg-purple-600 rounded-full"></div>}
+                            </div>
+                            <p className="text-gray-600 text-sm mb-2">{notification.message}</p>
+                            <p className="text-xs text-gray-400">{formatTime(notification.createdAt)}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-2 ml-4">
+                          {!notification.isRead && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => markAsRead(notification.id)}
+                              className="text-purple-600 hover:bg-purple-50"
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => markAsRead(notification.id)}
-                            className="text-purple-600 hover:bg-purple-50"
+                            onClick={() => deleteNotification(notification.id)}
+                            className="text-red-600 hover:bg-red-50"
                           >
-                            <Check className="h-4 w-4" />
+                            <X className="h-4 w-4" />
                           </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteNotification(notification.id)}
-                          className="text-red-600 hover:bg-red-50"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                )
+              })}
             </div>
           )}
         </CardContent>
