@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyToken } from '@/lib/auth'
+import { uploadFile } from '@/lib/upload'
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '')
     
@@ -15,59 +16,40 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        phone: true,
-        avatar: true,
-        role: true,
-        isVerified: true,
-        createdAt: true
-      }
-    })
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    // Check if the request has the correct content type
+    const contentType = request.headers.get('content-type')
+    if (!contentType || !contentType.includes('multipart/form-data')) {
+      return NextResponse.json({ error: 'Invalid content type. Expected multipart/form-data' }, { status: 400 })
     }
 
-    return NextResponse.json({
-      success: true,
-      data: user
-    })
+    const formData = await request.formData()
+    const file = formData.get('avatar') as File
 
-  } catch (error) {
-    console.error('Profile fetch error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-export async function PUT(request: NextRequest) {
-  try {
-    const token = request.headers.get('authorization')?.replace('Bearer ', '')
-    
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!file) {
+      return NextResponse.json({ error: 'No image file provided' }, { status: 400 })
     }
 
-    const decoded = verifyToken(token)
-    if (!decoded) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      return NextResponse.json({ error: 'File must be an image' }, { status: 400 })
     }
 
-    const body = await request.json()
-    const { firstName, lastName, phone } = body
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      return NextResponse.json({ error: 'File size must be less than 5MB' }, { status: 400 })
+    }
 
+    // Upload to Cloudinary
+    const uploadResult = await uploadFile(file, 'avatars', `user_${decoded.userId}_`)
+
+    if (!uploadResult.success) {
+      return NextResponse.json({ error: 'Failed to upload image' }, { status: 500 })
+    }
+
+    // Update user's avatar in database
     const updatedUser = await prisma.user.update({
       where: { id: decoded.userId },
-      data: {
-        firstName,
-        lastName,
-        phone
-      },
+      data: { avatar: uploadResult.url },
       select: {
         id: true,
         firstName: true,
@@ -83,12 +65,54 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Profile updated successfully',
+      message: 'Avatar updated successfully',
       data: updatedUser
     })
 
   } catch (error) {
-    console.error('Profile update error:', error)
+    console.error('Avatar upload error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const token = request.headers.get('authorization')?.replace('Bearer ', '')
+    
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const decoded = verifyToken(token)
+    if (!decoded) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+    }
+
+    // Remove avatar from user
+    const updatedUser = await prisma.user.update({
+      where: { id: decoded.userId },
+      data: { avatar: null },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        avatar: true,
+        role: true,
+        isVerified: true,
+        createdAt: true
+      }
+    })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Avatar removed successfully',
+      data: updatedUser
+    })
+
+  } catch (error) {
+    console.error('Avatar removal error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 } 

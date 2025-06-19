@@ -46,7 +46,7 @@ function validateFile(file: File, allowedTypes: string[]): { valid: boolean; err
 // Upload file
 export async function uploadFile(
   file: File, 
-  folder: 'images' | 'documents' = 'images',
+  folder: 'images' | 'documents' | 'avatars' | 'salons' = 'images',
   prefix: string = ''
 ): Promise<{ success: boolean; url?: string; error?: string }> {
   try {
@@ -58,7 +58,9 @@ export async function uploadFile(
     }
 
     // Validate file
-    const allowedTypes = folder === 'images' ? ALLOWED_IMAGE_TYPES : ALLOWED_DOCUMENT_TYPES
+    const allowedTypes = folder === 'images' || folder === 'avatars' || folder === 'salons' 
+      ? ALLOWED_IMAGE_TYPES 
+      : ALLOWED_DOCUMENT_TYPES
     const validation = validateFile(file, allowedTypes)
     
     if (!validation.valid) {
@@ -88,7 +90,7 @@ export async function uploadFile(
 // Upload multiple files
 export async function uploadMultipleFiles(
   files: File[], 
-  folder: 'images' | 'documents' = 'images',
+  folder: 'images' | 'documents' | 'avatars' | 'salons' = 'images',
   prefix: string = ''
 ): Promise<{ success: boolean; urls?: string[]; errors?: string[] }> {
   const results = await Promise.all(

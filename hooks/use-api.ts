@@ -28,8 +28,12 @@ export function useApi() {
     try {
       const token = getToken()
       const headers: HeadersInit = {
-        'Content-Type': 'application/json',
         ...options.headers,
+      }
+
+      // Only set Content-Type if it's not FormData
+      if (!(options.body instanceof FormData)) {
+        headers['Content-Type'] = 'application/json'
       }
 
       if (token) {

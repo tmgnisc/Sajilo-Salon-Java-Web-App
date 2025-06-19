@@ -15,6 +15,7 @@ interface User {
   lastName: string
   email: string
   role: string
+  avatar?: string
 }
 
 interface Notification {
@@ -145,7 +146,15 @@ export function CustomerNavbar() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="relative">
-                    <User className="h-5 w-5" />
+                    {user.avatar ? (
+                      <img
+                        src={user.avatar}
+                        alt="Profile"
+                        className="h-5 w-5 rounded-full object-cover"
+                      />
+                    ) : (
+                      <User className="h-5 w-5" />
+                    )}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">

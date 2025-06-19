@@ -4,6 +4,16 @@ import { registerSchema, hashPassword, generateToken } from '@/lib/auth'
 import { uploadFile, uploadMultipleFiles } from '@/lib/upload'
 import { sendWelcomeEmail } from '@/lib/email'
 
+// Map form salon types to Prisma enum values
+const salonTypeMap: Record<string, string> = {
+  'hair-salon': 'HAIR_SALON',
+  'beauty-salon': 'BEAUTY_SALON',
+  'spa': 'SPA',
+  'nail-salon': 'NAIL_SALON',
+  'barber-shop': 'BARBER_SHOP',
+  'multi-service': 'MULTI_SERVICE'
+}
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
@@ -75,18 +85,23 @@ export async function POST(request: NextRequest) {
         let imageUrl = null
         let documents: { name: string; type: string; url: string }[] = []
 
-        // Upload salon image
+        // Upload salon image to local storage
         const salonImage = formData.get('salonImage') as File
         if (salonImage && salonImage.size > 0) {
-          const imageResult = await uploadFile(salonImage, 'images', 'salon_')
+          console.log('Uploading salon image to local storage...')
+          const imageResult = await uploadFile(salonImage, 'salons', 'salon_')
           if (imageResult.success) {
             imageUrl = imageResult.url
+            console.log('Salon image uploaded successfully:', imageUrl)
+          } else {
+            console.error('Failed to upload salon image:', imageResult.error)
           }
         }
 
-        // Upload salon documents
+        // Upload salon documents to local storage
         const salonDocuments = formData.getAll('salonDocuments') as File[]
         if (salonDocuments.length > 0) {
+          console.log('Uploading salon documents to local storage...')
           const documentsResult = await uploadMultipleFiles(salonDocuments, 'documents', 'doc_')
           if (documentsResult.success && documentsResult.urls) {
             documents = documentsResult.urls.map((url, index) => ({
@@ -94,14 +109,21 @@ export async function POST(request: NextRequest) {
               type: 'OTHER', // You can enhance this to detect document type
               url
             }))
+            console.log('Salon documents uploaded successfully:', documents.length)
+          } else {
+            console.error('Failed to upload salon documents:', documentsResult.error)
           }
         }
+
+        // Map salon type to Prisma enum
+        const mappedSalonType = validatedData.salonType ? salonTypeMap[validatedData.salonType] : 'MULTI_SERVICE'
+        console.log('Mapped salon type:', validatedData.salonType, '->', mappedSalonType)
 
         // Create salon
         salon = await tx.salon.create({
           data: {
             name: validatedData.salonName || '',
-            type: validatedData.salonType as any || 'MULTI_SERVICE',
+            type: mappedSalonType as any,
             address: validatedData.salonAddress || '',
             description: validatedData.salonDescription || null,
             imageUrl,
@@ -120,12 +142,6 @@ export async function POST(request: NextRequest) {
             }))
           })
         }
-
-        // Update user with salon reference
-        await tx.user.update({
-          where: { id: user.id },
-          data: { salonId: salon.id }
-        })
       }
 
       return { user, salon }
