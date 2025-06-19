@@ -114,7 +114,7 @@ export default function AdminSidebar() {
         <nav className="flex-1 p-4">
           <div className="space-y-2">
             {menuItems.map((item) => {
-              const isActive = getCurrentPath() === item.href
+              const isActive = getCurrentPath().startsWith(item.href)
               return (
                 <Button
                   key={item.href}

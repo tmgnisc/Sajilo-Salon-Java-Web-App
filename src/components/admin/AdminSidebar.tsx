@@ -20,6 +20,13 @@ export default function AdminSidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const location = useLocation()
 
+  const handleLogout = () => {
+    localStorage.removeItem('user')
+    localStorage.removeItem('token')
+    sessionStorage.removeItem('token')
+    window.location.href = "/"
+  }
+
   return (
     <div className={`bg-white border-r border-gray-200 transition-all duration-300 ${isCollapsed ? "w-16" : "w-64"}`}>
       <div className="flex flex-col h-full">
@@ -44,7 +51,7 @@ export default function AdminSidebar() {
         <nav className="flex-1 p-4">
           <div className="space-y-2">
             {menuItems.map((item) => {
-              const isActive = location.pathname === item.href
+              const isActive = location.pathname.startsWith(item.href)
               return (
                 <Link key={item.href} to={item.href}>
                   <div
@@ -80,7 +87,7 @@ export default function AdminSidebar() {
               <p className="text-xs text-gray-600">Premium Salon</p>
             </div>
           )}
-          <Button variant="ghost" className="w-full justify-start text-red-600 hover:bg-red-50">
+          <Button variant="ghost" className="w-full justify-start text-red-600 hover:bg-red-50" onClick={handleLogout}>
             <LogOut className="h-5 w-5 mr-3" />
             {!isCollapsed && "Logout"}
           </Button>

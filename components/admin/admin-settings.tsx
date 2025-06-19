@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Save, Upload, MapPin, Clock, Phone, Mail, Camera } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -10,55 +10,119 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+const SALON_TYPE_OPTIONS = [
+  { value: "hair-salon", label: "Hair Salon", prisma: "HAIR_SALON" },
+  { value: "beauty-salon", label: "Beauty Salon", prisma: "BEAUTY_SALON" },
+  { value: "spa", label: "Spa & Wellness", prisma: "SPA" },
+  { value: "nail-salon", label: "Nail Salon", prisma: "NAIL_SALON" },
+  { value: "barber-shop", label: "Barber Shop", prisma: "BARBER_SHOP" },
+  { value: "multi-service", label: "Multi-Service Salon", prisma: "MULTI_SERVICE" },
+]
 
 export function AdminSettings() {
   const { toast } = useToast()
-  const [salonData, setSalonData] = useState({
-    name: "Glamour Studio",
-    description:
-      "Premium salon offering luxury hair and beauty services with experienced stylists and modern facilities.",
-    address: "123 Beauty Street, Bandra West, Mumbai",
-    phone: "+91 98765 43210",
-    email: "info@glamourstudio.com",
-    openingHours: "09:00",
-    closingHours: "21:00",
-    images: [
-      "/placeholder.svg?height=200&width=300",
-      "/placeholder.svg?height=200&width=300",
-      "/placeholder.svg?height=200&width=300",
-    ],
-  })
+  const [salonData, setSalonData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState("")
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [salonType, setSalonType] = useState<string>("")
+  const imageInputRef = useRef<HTMLInputElement>(null)
 
-  const [ownerData, setOwnerData] = useState({
-    name: "Rajesh Kumar",
-    email: "rajesh@glamourstudio.com",
-    phone: "+91 98765 43210",
-    address: "456 Owner Street, Mumbai",
-  })
+  useEffect(() => {
+    fetchSalon()
+  }, [])
 
-  const handleSalonSubmit = (e: React.FormEvent) => {
+  const fetchSalon = async () => {
+    setLoading(true)
+    setError("")
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token")
+      const res = await fetch("/api/admin/salon", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await res.json()
+      if (data.success) {
+        setSalonData(data.data)
+        setSalonType(mapPrismaTypeToForm(data.data.type))
+        setImagePreview(data.data.imageUrl || null)
+      } else {
+        setError(data.error || "Failed to load salon data")
+      }
+    } catch (err) {
+      setError("Failed to connect to the server. Please check your network.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const mapPrismaTypeToForm = (prismaType: string) => {
+    const found = SALON_TYPE_OPTIONS.find(opt => opt.prisma === prismaType)
+    return found ? found.value : "multi-service"
+  }
+  const mapFormTypeToPrisma = (formType: string) => {
+    const found = SALON_TYPE_OPTIONS.find(opt => opt.value === formType)
+    return found ? found.prisma : "MULTI_SERVICE"
+  }
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setImageFile(file)
+      setImagePreview(URL.createObjectURL(file))
+    }
+  }
+
+  const handleSalonChange = (field: string, value: any) => {
+    setSalonData((prev: any) => ({ ...prev, [field]: value }))
+  }
+
+  const handleSalonSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    toast({
-      title: "Salon Details Updated",
-      description: "Your salon information has been updated successfully",
-    })
+    setSaving(true)
+    setError("")
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token")
+      const formData = new FormData()
+      formData.append("name", salonData.name)
+      formData.append("type", mapFormTypeToPrisma(salonType))
+      formData.append("address", salonData.address)
+      formData.append("description", salonData.description)
+      if (imageFile) {
+        formData.append("image", imageFile)
+      }
+      // Optionally add more fields (phone, email, opening/closing hours) if supported by backend
+      const res = await fetch("/api/admin/salon", {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      })
+      const data = await res.json()
+      if (data.success) {
+        setSalonData(data.data)
+        setImagePreview(data.data.imageUrl || null)
+        setImageFile(null)
+        toast({ title: "Salon Details Updated", description: "Your salon information has been updated successfully" })
+      } else {
+        setError(data.error || "Failed to update salon data")
+      }
+    } catch (err) {
+      setError("Failed to connect to the server. Please check your network.")
+    } finally {
+      setSaving(false)
+    }
   }
 
-  const handleOwnerSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    toast({
-      title: "Profile Updated",
-      description: "Your profile information has been updated successfully",
-    })
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-[300px]">Loading salon data...</div>
   }
-
-  const handleImageUpload = (index: number) => {
-    // Simulate image upload
-    toast({
-      title: "Image Uploaded",
-      description: `Image ${index + 1} has been uploaded successfully`,
-    })
+  if (error) {
+    return <div className="flex items-center justify-center min-h-[300px] text-red-500">{error}</div>
   }
+  if (!salonData) return null
 
   return (
     <div className="p-6 space-y-6">
@@ -67,48 +131,48 @@ export function AdminSettings() {
         <h1 className="text-3xl font-bold text-gray-900">Account Settings</h1>
         <p className="text-gray-600">Manage your salon and account information</p>
       </div>
-
       <Tabs defaultValue="salon" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="salon">Salon Settings</TabsTrigger>
           <TabsTrigger value="profile">Profile Settings</TabsTrigger>
         </TabsList>
-
         <TabsContent value="salon" className="space-y-6">
-          {/* Salon Images */}
+          {/* Salon Image */}
           <Card className="border-0 bg-white/80 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Camera className="h-5 w-5 mr-2" />
-                Salon Images
+                Salon Image
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {salonData.images.map((image, index) => (
-                  <div key={index} className="space-y-3">
-                    <div className="relative">
-                      <img
-                        src={image || "/placeholder.svg"}
-                        alt={`Salon image ${index + 1}`}
-                        className="w-full h-48 object-cover rounded-lg border"
-                      />
-                      <Button
-                        size="sm"
-                        className="absolute bottom-2 right-2 bg-gradient-to-r from-purple-600 to-rose-500"
-                        onClick={() => handleImageUpload(index)}
-                      >
-                        <Upload className="h-4 w-4 mr-1" />
-                        Change
-                      </Button>
-                    </div>
-                    <p className="text-sm text-gray-600 text-center">Image {index + 1}</p>
-                  </div>
-                ))}
+              <div className="flex flex-col md:flex-row gap-6 items-center">
+                <div className="relative w-48 h-48">
+                  <img
+                    src={imagePreview || "/placeholder.svg"}
+                    alt="Salon image"
+                    className="w-full h-full object-cover rounded-lg border"
+                  />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={imageInputRef}
+                    className="hidden"
+                    onChange={handleImageChange}
+                  />
+                  <Button
+                    size="sm"
+                    className="absolute bottom-2 right-2 bg-gradient-to-r from-purple-600 to-rose-500"
+                    onClick={() => imageInputRef.current?.click()}
+                    type="button"
+                  >
+                    <Upload className="h-4 w-4 mr-1" />
+                    Change
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
-
           {/* Salon Information */}
           <Card className="border-0 bg-white/80 backdrop-blur-sm">
             <CardHeader>
@@ -121,123 +185,78 @@ export function AdminSettings() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Salon Name</label>
                     <Input
                       value={salonData.name}
-                      onChange={(e) => setSalonData({ ...salonData, name: e.target.value })}
+                      onChange={e => handleSalonChange("name", e.target.value)}
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                      <Input
-                        value={salonData.phone}
-                        onChange={(e) => setSalonData({ ...salonData, phone: e.target.value })}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Salon Type</label>
+                    <Select value={salonType} onValueChange={setSalonType} required>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select salon type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SALON_TYPE_OPTIONS.map(opt => (
+                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                    <Input
-                      type="email"
-                      value={salonData.email}
-                      onChange={(e) => setSalonData({ ...salonData, email: e.target.value })}
-                      className="pl-10"
-                      required
-                    />
-                  </div>
-                </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-3 text-gray-400 h-5 w-5" />
                     <Textarea
                       value={salonData.address}
-                      onChange={(e) => setSalonData({ ...salonData, address: e.target.value })}
+                      onChange={e => handleSalonChange("address", e.target.value)}
                       className="pl-10"
                       rows={3}
                       required
                     />
                   </div>
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
                   <Textarea
                     value={salonData.description}
-                    onChange={(e) => setSalonData({ ...salonData, description: e.target.value })}
+                    onChange={e => handleSalonChange("description", e.target.value)}
                     rows={4}
                     required
                   />
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Opening Hours</label>
-                    <div className="relative">
-                      <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                      <Input
-                        type="time"
-                        value={salonData.openingHours}
-                        onChange={(e) => setSalonData({ ...salonData, openingHours: e.target.value })}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Closing Hours</label>
-                    <div className="relative">
-                      <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                      <Input
-                        type="time"
-                        value={salonData.closingHours}
-                        onChange={(e) => setSalonData({ ...salonData, closingHours: e.target.value })}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-
+                {/* Add more fields as needed */}
                 <div className="flex justify-end">
                   <Button
                     type="submit"
                     className="bg-gradient-to-r from-purple-600 to-rose-500 hover:from-purple-700 hover:to-rose-600"
+                    disabled={saving}
                   >
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Salon Details
+                    {saving ? "Saving..." : (<><Save className="h-4 w-4 mr-2" />Save Salon Details</>)}
                   </Button>
                 </div>
               </form>
             </CardContent>
           </Card>
         </TabsContent>
-
         <TabsContent value="profile" className="space-y-6">
           <Card className="border-0 bg-white/80 backdrop-blur-sm">
             <CardHeader>
               <CardTitle>Owner Profile</CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleOwnerSubmit} className="space-y-6">
+              <form onSubmit={handleSalonSubmit} className="space-y-6">
                 <div className="flex items-center space-x-6 mb-6">
                   <div className="w-20 h-20 bg-gradient-to-r from-purple-600 to-rose-500 rounded-full flex items-center justify-center">
                     <span className="text-white font-bold text-2xl">
-                      {ownerData.name
+                      {salonData.name
                         .split(" ")
                         .map((n) => n[0])
                         .join("")}
                     </span>
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{ownerData.name}</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">{salonData.name}</h3>
                     <p className="text-gray-600">Salon Owner</p>
                   </div>
                 </div>
@@ -246,8 +265,8 @@ export function AdminSettings() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
                     <Input
-                      value={ownerData.name}
-                      onChange={(e) => setOwnerData({ ...ownerData, name: e.target.value })}
+                      value={salonData.name}
+                      onChange={(e) => handleSalonChange("name", e.target.value)}
                       required
                     />
                   </div>
@@ -257,8 +276,8 @@ export function AdminSettings() {
                       <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                       <Input
                         type="email"
-                        value={ownerData.email}
-                        onChange={(e) => setOwnerData({ ...ownerData, email: e.target.value })}
+                        value={salonData.email}
+                        onChange={(e) => handleSalonChange("email", e.target.value)}
                         className="pl-10"
                         required
                       />
@@ -269,8 +288,8 @@ export function AdminSettings() {
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                       <Input
-                        value={ownerData.phone}
-                        onChange={(e) => setOwnerData({ ...ownerData, phone: e.target.value })}
+                        value={salonData.phone}
+                        onChange={(e) => handleSalonChange("phone", e.target.value)}
                         className="pl-10"
                         required
                       />
@@ -281,8 +300,8 @@ export function AdminSettings() {
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                       <Input
-                        value={ownerData.address}
-                        onChange={(e) => setOwnerData({ ...ownerData, address: e.target.value })}
+                        value={salonData.address}
+                        onChange={(e) => handleSalonChange("address", e.target.value)}
                         className="pl-10"
                         required
                       />

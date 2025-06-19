@@ -1,24 +1,103 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Search, Filter, Star, MapPin, Clock } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { salonsData } from "@/lib/data"
+
+// Define TypeScript interface for salon data
+interface Salon {
+  id: string
+  name: string
+  address: string
+  description: string
+  imageUrl?: string
+  services: { price: number }[]
+  isPremium?: boolean // For premium filter
+  location?: { lat: number; lng: number } // For distance calculation
+}
 
 export function SalonListing() {
+  const [salons, setSalons] = useState<Salon[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
-  const [sortBy, setSortBy] = useState("rating")
-  const [filterBy, setFilterBy] = useState("all")
+  const [sortBy, setSortBy] = useState<"rating" | "price" | "distance">("rating")
+  const [filterBy, setFilterBy] = useState<"all" | "premium" | "budget">("all")
 
-  const filteredSalons = salonsData.filter(
-    (salon) =>
-      salon.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      salon.address.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+  useEffect(() => {
+    fetchSalons()
+  }, [])
+
+  const fetchSalons = async () => {
+    setLoading(true)
+    setError("")
+    try {
+      const res = await fetch("/api/salons")
+      const data = await res.json()
+      if (data.success) {
+        setSalons(data.data)
+      } else {
+        setError(data.error || "Failed to load salons")
+      }
+    } catch (err) {
+      setError("Failed to connect to the server. Please check your network.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Filter and sort salons
+  const filteredSalons = salons
+    .filter(
+      (salon) =>
+        salon.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        salon.address.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .filter((salon) => {
+      if (filterBy === "premium") return salon.isPremium
+      if (filterBy === "budget") {
+        const minPrice = salon.services.length > 0 ? Math.min(...salon.services.map((s) => s.price)) : Infinity
+        return minPrice < 1000 // Example threshold for budget
+      }
+      return true
+    })
+    .sort((a, b) => {
+      if (sortBy === "rating") return b.rating - a.rating
+      if (sortBy === "price") {
+        const aPrice = a.services.length > 0 ? Math.min(...a.services.map((s) => s.price)) : Infinity
+        const bPrice = b.services.length > 0 ? Math.min(...b.services.map((s) => s.price)) : Infinity
+        return aPrice - bPrice
+      }
+      if (sortBy === "distance") {
+        // Placeholder: Requires user location and salon coordinates
+        // Example: return calculateDistance(userLocation, a.location) - calculateDistance(userLocation, b.location)
+        return 0
+      }
+      return 0
+    })
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[300px]" role="status">
+        <span className="text-gray-500">Loading salons...</span>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[300px]">
+        <span className="text-red-500">{error}</span>
+        <Button variant="outline" className="ml-4" onClick={fetchSalons}>
+          Retry
+        </Button>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -27,16 +106,20 @@ export function SalonListing() {
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+              <Search
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5"
+                aria-hidden="true"
+              />
               <Input
                 placeholder="Search salons by name or location..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
+                aria-label="Search salons"
               />
             </div>
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-full md:w-48">
+            <Select value={sortBy} onValueChange={v => setSortBy(v as "rating" | "price" | "distance")}>
+              <SelectTrigger className="w-full md:w-48" aria-label="Sort salons">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
@@ -45,8 +128,8 @@ export function SalonListing() {
                 <SelectItem value="distance">Nearest First</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={filterBy} onValueChange={setFilterBy}>
-              <SelectTrigger className="w-full md:w-48">
+            <Select value={filterBy} onValueChange={v => setFilterBy(v as "all" | "premium" | "budget")}>
+              <SelectTrigger className="w-full md:w-48" aria-label="Filter salons">
                 <SelectValue placeholder="Filter by" />
               </SelectTrigger>
               <SelectContent>
@@ -64,8 +147,8 @@ export function SalonListing() {
         <p className="text-gray-600">
           Showing {filteredSalons.length} salon{filteredSalons.length !== 1 ? "s" : ""}
         </p>
-        <Button variant="outline" size="sm">
-          <Filter className="h-4 w-4 mr-2" />
+        <Button variant="outline" size="sm" aria-label="Open more filters">
+          <Filter className="h-4 w-4 mr-2" aria-hidden="true" />
           More Filters
         </Button>
       </div>
@@ -80,14 +163,10 @@ export function SalonListing() {
             <div className="flex">
               <div className="relative w-48 h-48">
                 <img
-                  src={salon.images[0] || "/placeholder.svg"}
-                  alt={salon.name}
+                  src={salon.imageUrl || "/placeholder.svg"}
+                  alt={`${salon.name} salon image`}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
-                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center">
-                  <Star className="h-4 w-4 fill-amber-500 text-amber-500 mr-1" />
-                  <span className="text-sm font-medium">{salon.rating}</span>
-                </div>
               </div>
 
               <CardContent className="flex-1 p-6">
@@ -102,12 +181,8 @@ export function SalonListing() {
 
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center text-sm text-gray-500">
-                    <MapPin className="h-4 w-4 mr-2" />
+                    <MapPin className="h-4 w-4 mr-2" aria-hidden="true" />
                     {salon.address}
-                  </div>
-                  <div className="flex items-center text-sm text-gray-500">
-                    <Clock className="h-4 w-4 mr-2" />
-                    {salon.openingHours} - {salon.closingHours}
                   </div>
                 </div>
 
@@ -115,12 +190,13 @@ export function SalonListing() {
                   <div className="text-sm text-gray-500">
                     Starting from{" "}
                     <span className="text-lg font-semibold text-purple-600">
-                      ₹{Math.min(...salon.services.map((s) => s.price))}
+                      ₹{salon.services.length > 0 ? Math.min(...salon.services.map((s) => s.price)) : 0}
                     </span>
                   </div>
                   <Button
                     className="bg-gradient-to-r from-purple-600 to-rose-500 hover:from-purple-700 hover:to-rose-600"
                     onClick={() => (window.location.href = `/salons/${salon.id}`)}
+                    aria-label={`Book appointment at ${salon.name}`}
                   >
                     Book Now
                   </Button>
@@ -134,7 +210,7 @@ export function SalonListing() {
       {filteredSalons.length === 0 && (
         <div className="text-center py-12">
           <p className="text-gray-500 text-lg">No salons found matching your criteria</p>
-          <Button variant="outline" className="mt-4" onClick={() => setSearchTerm("")}>
+          <Button variant="outline" className="mt-4" onClick={() => setSearchTerm("")} aria-label="Clear search">
             Clear Search
           </Button>
         </div>

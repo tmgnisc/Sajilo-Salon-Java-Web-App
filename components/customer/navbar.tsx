@@ -150,10 +150,10 @@ export function CustomerNavbar() {
                       <img
                         src={user.avatar}
                         alt="Profile"
-                        className="h-5 w-5 rounded-full object-cover"
+                        className="h-10 w-10 rounded-full object-cover"
                       />
                     ) : (
-                      <User className="h-5 w-5" />
+                      <User className="h-10 w-10" />
                     )}
                   </Button>
                 </DropdownMenuTrigger>
