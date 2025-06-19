@@ -168,6 +168,7 @@ enum UserRole {
   CUSTOMER
   SALON_OWNER
   ADMIN
+  SUPERADMIN
 }
 
 enum SalonType {
