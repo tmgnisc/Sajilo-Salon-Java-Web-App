@@ -3,13 +3,16 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster"
+import { CustomerNavbar } from "@/components/customer/navbar"
+import { CustomerFooter } from "@/components/customer/footer"
+import { LayoutWrapper } from "@/components/layout-wrapper"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "Sajilo Salon - Premium Salon Booking",
   description: "Book your favorite salon services with ease",
-    generator: 'v0.dev'
+  generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -20,7 +23,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        {children}
+        <LayoutWrapper>
+          {children}
+        </LayoutWrapper>
         <Toaster />
       </body>
     </html>

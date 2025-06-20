@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Bell, Menu, X, User, LogOut, Settings, Calendar } from "lucide-react"
+import { Bell, Menu, X, User, LogOut, Settings, Calendar, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
@@ -38,9 +38,19 @@ export function CustomerNavbar() {
     
     if (userData && token) {
       try {
-        setUser(JSON.parse(userData))
-        // Fetch notification count if user is logged in
-        fetchNotificationCount()
+        const parsedUser = JSON.parse(userData)
+        setUser(parsedUser)
+        
+        // Redirect superadmin users to superadmin panel
+        if (parsedUser.role === 'superadmin') {
+          router.push('/superadmin')
+          return
+        }
+        
+        // Fetch notification count if user is logged in (only for non-superadmin users)
+        if (parsedUser.role !== 'superadmin') {
+          fetchNotificationCount()
+        }
       } catch (error) {
         console.error('Error parsing user data:', error)
         // Clear invalid data
@@ -50,7 +60,7 @@ export function CustomerNavbar() {
       }
     }
     setIsLoading(false)
-  }, [])
+  }, [router])
 
   const fetchNotificationCount = async () => {
     try {
@@ -76,6 +86,11 @@ export function CustomerNavbar() {
     
     // Redirect to home page
     router.push('/')
+  }
+
+  // Don't render navbar for superadmin users (they should be redirected)
+  if (user?.role === 'superadmin') {
+    return null
   }
 
   if (isLoading) {
@@ -161,7 +176,18 @@ export function CustomerNavbar() {
                   <div className="px-3 py-2 border-b">
                     <p className="text-sm font-medium">{user.firstName} {user.lastName}</p>
                     <p className="text-xs text-gray-500">{user.email}</p>
+                    {user.role === 'superadmin' && (
+                      <p className="text-xs text-purple-600 font-medium">Superadmin</p>
+                    )}
                   </div>
+                  {user.role === 'superadmin' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/superadmin" className="flex items-center">
+                        <Shield className="h-4 w-4 mr-2" />
+                        Superadmin Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem asChild>
                     <Link href="/profile" className="flex items-center">
                       <Settings className="h-4 w-4 mr-2" />

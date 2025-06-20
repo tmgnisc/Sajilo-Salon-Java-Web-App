@@ -9,7 +9,8 @@
     "start": "next start",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "seed:superadmin": "tsx prisma/seed-superadmin.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

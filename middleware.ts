@@ -5,6 +5,7 @@ import { verifyToken } from '@/lib/auth'
 // Routes that require authentication
 const protectedRoutes = [
   '/admin',
+  '/superadmin',
   '/profile',
   '/bookings',
   '/notifications'
@@ -44,7 +45,13 @@ export function middleware(request: NextRequest) {
 
     // Check role-based access
     if (pathname.startsWith('/admin') && decoded.role !== 'SALON_OWNER' && decoded.role !== 'ADMIN') {
-      // Redirect to home if not authorized
+      // Redirect to home if not authorized for admin routes
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+
+    // Check superadmin access
+    if (pathname.startsWith('/superadmin') && decoded.role !== 'SUPERADMIN') {
+      // Redirect to home if not authorized for superadmin routes
       return NextResponse.redirect(new URL('/', request.url))
     }
   }
@@ -53,7 +60,9 @@ export function middleware(request: NextRequest) {
     // User is already authenticated, redirect to appropriate dashboard
     const decoded = verifyToken(token)
     if (decoded) {
-      if (decoded.role === 'SALON_OWNER' || decoded.role === 'ADMIN') {
+      if (decoded.role === 'SUPERADMIN') {
+        return NextResponse.redirect(new URL('/superadmin', request.url))
+      } else if (decoded.role === 'SALON_OWNER' || decoded.role === 'ADMIN') {
         return NextResponse.redirect(new URL('/admin', request.url))
       } else {
         return NextResponse.redirect(new URL('/', request.url))

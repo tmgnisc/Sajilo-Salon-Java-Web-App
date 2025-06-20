@@ -54,7 +54,9 @@ export function LoginForm() {
         localStorage.setItem('user', JSON.stringify(data.data.user))
 
         // Redirect based on user role
-        if (data.data.user.role === 'SALON_OWNER' || data.data.user.role === 'ADMIN') {
+        if (data.data.user.role === 'SUPERADMIN' || data.data.user.email === 'admin@gmail.com') {
+          router.push('/superadmin')
+        } else if (data.data.user.role === 'SALON_OWNER' || data.data.user.role === 'ADMIN') {
           router.push('/admin')
         } else {
           router.push(redirect)

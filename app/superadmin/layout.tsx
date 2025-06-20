@@ -1,10 +1,15 @@
-import React from "react"
+import type React from "react"
+import SuperadminSidebar from "@/components/superadmin/superadmin-sidebar"
 
-export default function SuperadminLayout({ children }: { children: React.ReactNode }) {
+export default function SuperadminLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* You can add a SuperadminSidebar here later */}
-      <main className="container mx-auto px-4 py-8">{children}</main>
+    <div className="flex h-screen bg-gray-50">
+      <SuperadminSidebar />
+      <main className="flex-1 overflow-auto">{children}</main>
     </div>
   )
 } 

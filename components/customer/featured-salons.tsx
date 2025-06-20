@@ -54,7 +54,7 @@ export function FeaturedSalons() {
 
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-500">
-                  From <span className="text-lg font-semibold text-purple-600">₹{salon.services[0]?.price}</span>
+                  From <span className="text-lg font-semibold text-purple-600">NPR {salon.services[0]?.price}</span>
                 </div>
                 <Button
                   className="bg-gradient-to-r from-purple-600 to-rose-500 hover:from-purple-700 hover:to-rose-600"

@@ -248,7 +248,7 @@ export function ServicesManagement() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Price (₹)</label>
+                  <label className="block text-sm font-medium mb-2">Price (NPR)</label>
                   <Input
                     type="number"
                     value={formData.price}
@@ -307,7 +307,7 @@ export function ServicesManagement() {
                   <h3 className="font-semibold text-gray-900 mb-1">{service.name}</h3>
                   <p className="text-sm text-gray-600 mb-2">{service.description}</p>
                   <div className="flex items-center space-x-4 text-sm">
-                    <span className="text-purple-600 font-medium">₹{service.price}</span>
+                    <span className="text-purple-600 font-medium">NPR {service.price}</span>
                     <span className="text-gray-500">{service.duration} min</span>
                   </div>
                 </div>

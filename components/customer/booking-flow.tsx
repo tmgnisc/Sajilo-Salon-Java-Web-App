@@ -176,7 +176,7 @@ export function BookingFlow() {
                       <p className="font-medium">{service.title}</p>
                       <p className="text-sm text-gray-500">{service.duration} minutes</p>
                     </div>
-                    <span className="font-semibold">₹{service.price}</span>
+                    <span className="font-semibold">NPR {service.price}</span>
                   </div>
                 ))}
               </div>
@@ -193,7 +193,7 @@ export function BookingFlow() {
               <div className="border-t pt-4">
                 <div className="flex justify-between items-center text-lg font-bold">
                   <span>Total Amount:</span>
-                  <span className="text-purple-600">₹{getTotalPrice()}</span>
+                  <span className="text-purple-600">NPR {getTotalPrice()}</span>
                 </div>
               </div>
             </CardContent>

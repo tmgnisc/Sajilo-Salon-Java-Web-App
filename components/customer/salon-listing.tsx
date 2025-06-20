@@ -190,7 +190,7 @@ export function SalonListing() {
                   <div className="text-sm text-gray-500">
                     Starting from{" "}
                     <span className="text-lg font-semibold text-purple-600">
-                      ₹{salon.services.length > 0 ? Math.min(...salon.services.map((s) => s.price)) : 0}
+                      NPR {salon.services.length > 0 ? Math.min(...salon.services.map((s) => s.price)) : 0}
                     </span>
                   </div>
                   <Button

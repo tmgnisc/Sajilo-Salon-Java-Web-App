@@ -132,7 +132,7 @@ export function SalonDetails({ salonId }: SalonDetailsProps) {
                       </div>
                       <p className="text-gray-600 text-sm mb-3">{service.description}</p>
                       <div className="flex items-center justify-between">
-                        <span className="text-lg font-bold text-purple-600">₹{service.price}</span>
+                        <span className="text-lg font-bold text-purple-600">NPR {service.price}</span>
                         <Button
                           size="sm"
                           onClick={() => addToCart(service)}
@@ -169,14 +169,14 @@ export function SalonDetails({ salonId }: SalonDetailsProps) {
                         <p className="font-medium text-sm">{service.title}</p>
                         <p className="text-xs text-gray-500">{service.duration} min</p>
                       </div>
-                      <span className="font-semibold text-purple-600">₹{service.price}</span>
+                      <span className="font-semibold text-purple-600">NPR {service.price}</span>
                     </div>
                   ))}
 
                   <div className="border-t pt-3 mt-4">
                     <div className="flex justify-between items-center mb-4">
                       <span className="font-semibold">Total:</span>
-                      <span className="text-xl font-bold text-purple-600">₹{getTotalCartValue()}</span>
+                      <span className="text-xl font-bold text-purple-600">NPR {getTotalCartValue()}</span>
                     </div>
 
                     <Button

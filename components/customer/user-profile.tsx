@@ -296,7 +296,7 @@ export function UserProfile() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-rose-100">Amount Spent</p>
-                    <p className="text-2xl font-bold">₹{totalSpent}</p>
+                    <p className="text-2xl font-bold">NPR{totalSpent}</p>
                   </div>
                   <Star className="h-8 w-8 text-rose-200" />
                 </div>
@@ -388,7 +388,7 @@ export function UserProfile() {
                           </div>
 
                           <div className="text-right">
-                            <p className="text-lg font-bold text-purple-600 mb-2">₹{booking.totalAmount}</p>
+                            <p className="text-lg font-bold text-purple-600 mb-2">NPR {booking.totalAmount}</p>
                             {(booking.status === 'PENDING' || booking.status === 'CONFIRMED') && (
                               <Button
                                 variant="outline"
