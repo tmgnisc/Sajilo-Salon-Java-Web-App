@@ -18,9 +18,22 @@ import {
   Mail, 
   Phone,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  FileText
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+  DialogFooter
+} from "@/components/ui/dialog"
+import { getAllSalons, getSalonById, approveSalon, rejectSalon } from "./actions"
+import { useTransition } from "react"
 
 interface Salon {
   id: string
@@ -43,37 +56,34 @@ export default function SuperadminSalonsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [typeFilter, setTypeFilter] = useState("all")
+  const [selectedSalonId, setSelectedSalonId] = useState<string | null>(null)
+  const [salonDetails, setSalonDetails] = useState<any>(null)
+  const [detailsLoading, setDetailsLoading] = useState(false)
+  const [detailsError, setDetailsError] = useState("")
+  const [isPending, startTransition] = useTransition()
 
   useEffect(() => {
-    fetchSalons()
+    async function loadSalons() {
+      setLoading(true)
+      setError("")
+      try {
+        const data = await getAllSalons()
+        setSalons(data)
+      } catch (err: any) {
+        setError(err.message || "Failed to load salons")
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadSalons()
   }, [])
 
   useEffect(() => {
     filterSalons()
   }, [salons, searchTerm, statusFilter, typeFilter])
 
-  const fetchSalons = async () => {
-    setLoading(true)
-    setError("")
-    try {
-      const res = await fetch("/api/superadmin/salons")
-      const data = await res.json()
-      if (data.success) {
-        setSalons(data.data)
-      } else {
-        setError(data.error || "Failed to load salons")
-      }
-    } catch (err) {
-      setError("Failed to connect to the server. Please check your network.")
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const filterSalons = () => {
     let filtered = salons
-
-    // Search filter
     if (searchTerm) {
       filtered = filtered.filter(salon =>
         salon.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -82,8 +92,6 @@ export default function SuperadminSalonsPage() {
         salon.address.toLowerCase().includes(searchTerm.toLowerCase())
       )
     }
-
-    // Status filter
     if (statusFilter !== "all") {
       filtered = filtered.filter(salon => {
         if (statusFilter === "verified") return salon.isVerified
@@ -91,30 +99,49 @@ export default function SuperadminSalonsPage() {
         return true
       })
     }
-
-    // Type filter
     if (typeFilter !== "all") {
       filtered = filtered.filter(salon => salon.type === typeFilter)
     }
-
     setFilteredSalons(filtered)
   }
 
-  const handleAction = async (id: string, action: "approve" | "reject") => {
-    setActionLoading(id + action)
+  const openDetails = async (id: string) => {
+    setSelectedSalonId(id)
+    setDetailsLoading(true)
+    setDetailsError("")
     try {
-      const res = await fetch(`/api/superadmin/salons/${id}/${action}`, { method: "POST" })
-      const data = await res.json()
-      if (data.success) {
-        fetchSalons()
-      } else {
-        alert(data.error || "Action failed")
-      }
-    } catch {
-      alert("Network error")
+      const data = await getSalonById(id)
+      setSalonDetails(data)
+    } catch (err: any) {
+      setDetailsError(err.message || "Failed to load salon details")
     } finally {
-      setActionLoading(null)
+      setDetailsLoading(false)
     }
+  }
+  const closeDetails = () => {
+    setSelectedSalonId(null)
+    setSalonDetails(null)
+    setDetailsError("")
+  }
+
+  const handleAction = (id: string, action: "approve" | "reject") => {
+    setActionLoading(id + action)
+    startTransition(async () => {
+      try {
+        if (action === "approve") {
+          await approveSalon(id)
+        } else {
+          await rejectSalon(id)
+        }
+        // Refresh salon list
+        const data = await getAllSalons()
+        setSalons(data)
+      } catch (err: any) {
+        alert(err.message || "Action failed")
+      } finally {
+        setActionLoading(null)
+      }
+    })
   }
 
   const getStatusBadge = (isVerified: boolean) => {
@@ -153,7 +180,18 @@ export default function SuperadminSalonsPage() {
         <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
         <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Salons</h3>
         <p className="text-gray-600 mb-4">{error}</p>
-        <Button onClick={fetchSalons} className="gap-2">
+        <Button onClick={async () => {
+          setLoading(true)
+          setError("")
+          try {
+            const data = await getAllSalons()
+            setSalons(data)
+          } catch (err: any) {
+            setError(err.message || "Failed to load salons")
+          } finally {
+            setLoading(false)
+          }
+        }} className="gap-2">
           <RefreshCw className="h-4 w-4" />
           Try Again
         </Button>
@@ -169,7 +207,18 @@ export default function SuperadminSalonsPage() {
           <h1 className="text-3xl font-bold text-gray-900">Salon Management</h1>
           <p className="text-gray-600 mt-2">Manage and approve salon applications</p>
         </div>
-        <Button onClick={fetchSalons} variant="outline" className="gap-2">
+        <Button onClick={async () => {
+          setLoading(true)
+          setError("")
+          try {
+            const data = await getAllSalons()
+            setSalons(data)
+          } catch (err: any) {
+            setError(err.message || "Failed to load salons")
+          } finally {
+            setLoading(false)
+          }
+        }} variant="outline" className="gap-2">
           <RefreshCw className="h-4 w-4" />
           Refresh
         </Button>
@@ -401,7 +450,7 @@ export default function SuperadminSalonsPage() {
                         )}
                         Revoke
                       </Button>
-                      <Button size="sm" variant="outline" className="flex-1">
+                      <Button size="sm" variant="outline" className="flex-1" onClick={() => openDetails(salon.id)}>
                         <Eye className="h-4 w-4" />
                         View Details
                       </Button>
@@ -413,6 +462,72 @@ export default function SuperadminSalonsPage() {
           </div>
         )}
       </div>
+      <Dialog open={!!selectedSalonId} onOpenChange={open => { if (!open) closeDetails() }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Salon Details</DialogTitle>
+          </DialogHeader>
+          {detailsLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-indigo-600" />
+              <p className="text-gray-600">Loading salon details...</p>
+            </div>
+          ) : detailsError ? (
+            <div className="text-center py-12">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Salon</h3>
+              <p className="text-gray-600 mb-4">{detailsError}</p>
+              <DialogClose asChild>
+                <Button className="gap-2">Close</Button>
+              </DialogClose>
+            </div>
+          ) : salonDetails ? (
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                {salonDetails.imageUrl ? (
+                  <img src={salonDetails.imageUrl} alt={salonDetails.name} className="w-20 h-20 rounded-lg object-cover border" />
+                ) : (
+                  <div className="w-20 h-20 rounded-lg bg-gray-200 flex items-center justify-center">
+                    <Building2 className="h-8 w-8 text-gray-400" />
+                  </div>
+                )}
+                <span className="text-xl font-semibold">{salonDetails.name}</span>
+                <Badge variant="outline" className="text-xs ml-2">{salonDetails.type}</Badge>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                <MapPin className="h-4 w-4" />
+                <span>{salonDetails.address}</span>
+              </div>
+              {salonDetails.description && <p className="text-gray-700 mb-2">{salonDetails.description}</p>}
+              <div className="pt-2 border-t">
+                <h4 className="font-semibold text-gray-900 mb-2">Owner Information</h4>
+                <div className="flex flex-col gap-1 text-sm text-gray-600">
+                  <span><Mail className="inline h-4 w-4 mr-1" /> {salonDetails.owner?.email}</span>
+                  <span><Phone className="inline h-4 w-4 mr-1" /> {salonDetails.owner?.phone}</span>
+                  <span>Name: {salonDetails.owner?.firstName} {salonDetails.owner?.lastName}</span>
+                </div>
+              </div>
+              {salonDetails.documents && salonDetails.documents.length > 0 && (
+                <div className="pt-4 border-t">
+                  <h4 className="font-semibold text-gray-900 mb-2">Documents</h4>
+                  <ul className="list-disc pl-5 space-y-1">
+                    {salonDetails.documents.map((doc: any) => (
+                      <li key={doc.id} className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-gray-400" />
+                        <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{doc.name}</a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <DialogFooter className="mt-6">
+                <DialogClose asChild>
+                  <Button variant="outline">Close</Button>
+                </DialogClose>
+              </DialogFooter>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 } 

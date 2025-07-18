@@ -18,6 +18,7 @@ interface Salon {
   services: { price: number }[]
   isPremium?: boolean // For premium filter
   location?: { lat: number; lng: number } // For distance calculation
+  rating: number
 }
 
 export function SalonListing() {
@@ -37,6 +38,7 @@ export function SalonListing() {
     setError("")
     try {
       const res = await fetch("/api/salons")
+      
       const data = await res.json()
       if (data.success) {
         setSalons(data.data)

@@ -59,60 +59,16 @@ export default function SuperadminUsersPage() {
     setLoading(true)
     setError("")
     try {
-      // Simulate API call - replace with actual API endpoint
-      const mockUsers: UserData[] = [
-        {
-          id: '1',
-          firstName: 'John',
-          lastName: 'Doe',
-          email: 'john.doe@example.com',
-          phone: '+1234567890',
-          role: 'CUSTOMER',
-          isVerified: true,
-          isActive: true,
-          createdAt: '2024-01-15T10:30:00Z'
-        },
-        {
-          id: '2',
-          firstName: 'Jane',
-          lastName: 'Smith',
-          email: 'jane.smith@example.com',
-          phone: '+1234567891',
-          role: 'SALON_OWNER',
-          isVerified: true,
-          isActive: true,
-          createdAt: '2024-01-10T14:20:00Z'
-        },
-        {
-          id: '3',
-          firstName: 'Mike',
-          lastName: 'Johnson',
-          email: 'mike.johnson@example.com',
-          phone: '+1234567892',
-          role: 'ADMIN',
-          isVerified: true,
-          isActive: true,
-          createdAt: '2024-01-05T09:15:00Z'
-        },
-        {
-          id: '4',
-          firstName: 'Sarah',
-          lastName: 'Wilson',
-          email: 'sarah.wilson@example.com',
-          phone: '+1234567893',
-          role: 'CUSTOMER',
-          isVerified: false,
-          isActive: true,
-          createdAt: '2024-01-20T16:45:00Z'
-        }
-      ]
-      
-      setTimeout(() => {
-        setUsers(mockUsers)
-        setLoading(false)
-      }, 1000)
+      const res = await fetch("/api/superadmin/users")
+      const data = await res.json()
+      if (data.success) {
+        setUsers(data.data)
+      } else {
+        setError(data.error || "Failed to load users")
+      }
     } catch (err) {
       setError("Failed to load users")
+    } finally {
       setLoading(false)
     }
   }

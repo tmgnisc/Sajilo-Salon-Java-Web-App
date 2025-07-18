@@ -16,7 +16,6 @@ export async function POST(request: NextRequest) {
     }
 
     const { email, password } = validation.data
-
     // Find user
     const user = await prisma.user.findUnique({
       where: { email: email.toLowerCase() }

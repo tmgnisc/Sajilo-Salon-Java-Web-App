@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Eye, EyeOff, Mail, Lock, User, Phone, MapPin, Building, Upload, FileText } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
+import { toast } from "@/hooks/use-toast"
 
 type UserType = "user" | "salon-owner"
 
@@ -99,11 +100,22 @@ export function RegisterForm() {
 
         // Redirect based on user type
         if (formData.userType === 'salon-owner') {
-          router.push('/admin')
+          if (data.data.user.salon && !data.data.user.salon.isVerified) {
+            router.push('/verification-pending')
+          } else {
+            router.push('/admin')
+          }
         } else {
           router.push('/')
         }
       } else {
+        if (response.status === 409 && data.error?.toLowerCase().includes('already exists')) {
+          toast({
+            title: 'Email already registered',
+            description: 'An account with this email already exists. Please use a different email or login.',
+            // You can add variant: 'destructive' if your toast supports it
+          })
+        }
         setError(data.error || 'Registration failed')
       }
     } catch (error) {
