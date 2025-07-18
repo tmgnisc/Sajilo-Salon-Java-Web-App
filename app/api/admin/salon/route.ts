@@ -88,6 +88,8 @@ export async function PUT(request: NextRequest) {
     const type = formData.get('type') as string
     const address = formData.get('address') as string
     const description = formData.get('description') as string
+    const openingHour = formData.get('openingHour') as string
+    const closingHour = formData.get('closingHour') as string
 
     // Handle image upload
     let imageUrl = salon.imageUrl
@@ -107,7 +109,9 @@ export async function PUT(request: NextRequest) {
         type: type as any,
         address,
         description,
-        imageUrl
+        imageUrl,
+        openingHour,
+        closingHour
       },
       include: {
         owner: {

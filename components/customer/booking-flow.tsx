@@ -1,18 +1,81 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Calendar, Clock, CreditCard, CheckCircle } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { useToast } from "@/hooks/use-toast"
+import { createBooking } from "@/app/customer/booking/actions"
 
 export function BookingFlow() {
   const { toast } = useToast()
   const [step, setStep] = useState(1)
   const [selectedDate, setSelectedDate] = useState<Date>()
   const [selectedTime, setSelectedTime] = useState("")
+  const [cart, setCart] = useState<any[]>([])
+  const [salon, setSalon] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+  const [availableSlots, setAvailableSlots] = useState<string[]>([])
+  const [bookedSlots, setBookedSlots] = useState<string[]>([])
+
+  useEffect(() => {
+    // Read cart and salonId from localStorage
+    const cartData = localStorage.getItem("booking_cart")
+    const salonId = localStorage.getItem("booking_salonId")
+    if (!cartData || !salonId) {
+      setError("No booking cart or salon selected.")
+      setLoading(false)
+      return
+    }
+    setCart(JSON.parse(cartData))
+    // Fetch salon info
+    async function fetchSalon() {
+      setLoading(true)
+      try {
+        const res = await fetch(`/api/salons/${salonId}`)
+        const data = await res.json()
+        if (data.success) {
+          setSalon(data.data)
+        } else {
+          setError(data.error || "Salon not found")
+        }
+      } catch {
+        setError("Failed to connect to the server. Please check your network.")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchSalon()
+  }, [])
+
+  useEffect(() => {
+    if (!salon || !selectedDate) return
+    async function fetchBookingsAndSlots() {
+      // Fetch bookings for this salon and date
+      const dateStr = selectedDate.toISOString().split('T')[0]
+      const res = await fetch(`/api/salons/${salon.id}/bookings?date=${dateStr}`)
+      const data = await res.json()
+      const booked = data.success ? data.data.map((b: any) => b.time) : []
+      setBookedSlots(booked)
+      // Generate slots between openingHour and closingHour
+      const slots: string[] = []
+      const opening = salon.openingHour || "09:00"
+      const closing = salon.closingHour || "18:00"
+      let [h, m] = opening.split(":").map(Number)
+      let [ch, cm] = closing.split(":").map(Number)
+      while (h < ch || (h === ch && m < cm)) {
+        const slot = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`
+        slots.push(slot)
+        m += 30
+        if (m >= 60) { h++; m = 0 }
+      }
+      setAvailableSlots(slots)
+    }
+    fetchBookingsAndSlots()
+  }, [salon, selectedDate])
 
   const timeSlots = [
     "09:00",
@@ -37,21 +100,49 @@ export function BookingFlow() {
 
   const unavailableSlots = ["10:30", "14:00", "16:30"]
 
-  const mockServices = [
-    { id: 1, title: "Hair Cut & Style", price: 800, duration: 60 },
-    { id: 2, title: "Facial Treatment", price: 1200, duration: 90 },
-  ]
-
-  const handleBooking = () => {
-    toast({
-      title: "Booking Confirmed!",
-      description: "Your appointment has been successfully booked.",
-    })
-    setStep(4)
+  const handleBooking = async () => {
+    // Get userId (for demo, from localStorage; in real app, from session/auth)
+    const user = localStorage.getItem("user")
+    const userId = user ? JSON.parse(user).id : null
+    if (!userId) {
+      toast({ title: "Error", description: "User not logged in." })
+      return
+    }
+    try {
+      const res = await createBooking({
+        userId,
+        salonId: salon.id,
+        serviceIds: cart.map((s) => s.id),
+        date: selectedDate?.toISOString() || new Date().toISOString(),
+        time: selectedTime,
+        totalAmount: getTotalPrice(),
+        notes: ""
+      })
+      if (res.success) {
+        toast({
+          title: "Booking Confirmed!",
+          description: "Your appointment has been successfully booked.",
+        })
+        setStep(4)
+        localStorage.removeItem("booking_cart")
+        localStorage.removeItem("booking_salonId")
+      } else {
+        toast({ title: "Booking Failed", description: res.error || "Unknown error" })
+      }
+    } catch (e: any) {
+      toast({ title: "Booking Failed", description: e.message || "Unknown error" })
+    }
   }
 
-  const getTotalPrice = () => mockServices.reduce((total, service) => total + service.price, 0)
-  const getTotalDuration = () => mockServices.reduce((total, service) => total + service.duration, 0)
+  const getTotalPrice = () => cart.reduce((total, service) => total + service.price, 0)
+  const getTotalDuration = () => cart.reduce((total, service) => total + service.duration, 0)
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-64"><span>Loading...</span></div>
+  }
+  if (error || !salon) {
+    return <div className="container mx-auto px-4 py-8">{error || "Salon not found"}</div>
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -121,11 +212,11 @@ export function BookingFlow() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-6">
-              {timeSlots.map((time) => (
+              {availableSlots.map((time) => (
                 <Button
                   key={time}
                   variant={selectedTime === time ? "default" : "outline"}
-                  disabled={unavailableSlots.includes(time)}
+                  disabled={bookedSlots.includes(time)}
                   onClick={() => setSelectedTime(time)}
                   className={
                     selectedTime === time
@@ -164,13 +255,13 @@ export function BookingFlow() {
             <CardContent className="space-y-4">
               <div>
                 <h3 className="font-semibold mb-2">Salon Details</h3>
-                <p className="text-gray-600">Glamour Studio</p>
-                <p className="text-sm text-gray-500">123 Beauty Street, Mumbai</p>
+                <p className="text-gray-600">{salon.name}</p>
+                <p className="text-sm text-gray-500">{salon.address}</p>
               </div>
 
               <div>
                 <h3 className="font-semibold mb-2">Services</h3>
-                {mockServices.map((service) => (
+                {cart.map((service) => (
                   <div key={service.id} className="flex justify-between items-center py-2">
                     <div>
                       <p className="font-medium">{service.title}</p>

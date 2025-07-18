@@ -202,6 +202,24 @@ export function AdminSettings() {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Opening Hour</label>
+                    <Input
+                      type="time"
+                      value={salonData.openingHour || ""}
+                      onChange={e => handleSalonChange("openingHour", e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Closing Hour</label>
+                    <Input
+                      type="time"
+                      value={salonData.closingHour || ""}
+                      onChange={e => handleSalonChange("closingHour", e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>

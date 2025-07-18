@@ -13,14 +13,15 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
   
   // Check if current path is admin route
   const isAdminRoute = pathname?.startsWith('/admin') || pathname?.startsWith('/superadmin')
+  const isBookingPage = pathname === '/customer/booking'
   
   return (
     <>
-      {!isAdminRoute && <CustomerNavbar />}
-      <main className={isAdminRoute ? "" : "min-h-screen"}>
+      {!isAdminRoute && !isBookingPage && <CustomerNavbar />}
+      <main className={isAdminRoute || isBookingPage ? "" : "min-h-screen"}>
         {children}
       </main>
-      {!isAdminRoute && <CustomerFooter />}
+      {!isAdminRoute && !isBookingPage && <CustomerFooter />}
     </>
   )
 } 
